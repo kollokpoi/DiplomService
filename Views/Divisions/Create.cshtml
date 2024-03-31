@@ -1,0 +1,312 @@
+﻿@model DiplomService.ViewModels.Divisions.DivisionViewModel
+
+@{
+    ViewData["Title"] = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    string min = $"{Model.StartDate.Day}.{Model.StartDate.Month}.{Model.StartDate.Year}";
+    string max = "";
+    if (Model.EndDate != null)
+    {
+        max = $"{Model.EndDate.Value.Day}.{Model.EndDate.Value.Month}.{Model.EndDate.Value.Year}";
+    }
+}
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Заполните данные об организуемом мероприятии</p>
+    </div>
+</div>
+
+<div class="container">
+    <form id="eventForm" class="eventPage" enctype="multipart/form-data" method="post">
+        <p class="display-6">Заполните основную информацию</p>
+        <input type="hidden" asp-for="EventId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="d-flex align-items-center">
+            <div class="my-2 me-2">
+                <label asp-for="PreviewImageFile" class="control-label"></label>
+                <div class="form-group">
+                    @{
+                        @if (Model is not null && Model.PriviewImage is not null)
+                        {
+                            string? mimeType = Model.MimeType; // MIME-тип по умолчанию
+
+                            if (mimeType is not null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.PriviewImage)" id="previewImage" alt="Image" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">
+                        }
+                    }
+                    <div>
+                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                        <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
+                    </div>
+                </div>
+                <span asp-validation-for="PreviewImageFile" class="text-danger"></span>
+            </div>
+            <div class="w-100 position-relative">
+                   <div class="form-group my-2">
+                    <label asp-for="Name" class="control-label">Название</label>
+                    <input asp-for="Name" class="login-form__input form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+
+                <div class="form-group my-2">
+                    <label asp-for="Description" class="control-label">Описание</label>
+                    <textarea asp-for="Description" class="login-form__input textarea-input"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                <div class="form-group my-2">
+                    <label asp-for="PlaceName" class="control-label">Основное место проведения*</label>
+                    <input asp-for="PlaceName" class="login-form__input form-control" />
+                    <div id="suggestionsDropdown" style="position: absolute; display: none; z-index:10"></div>
+                </div>
+            </div>
+
+        </div>
+        <div class="form-group my-2">
+            <input type="hidden" asp-for="Longitude" />
+            <input type="hidden" asp-for="Latitude" />
+            <div id="map"></div>
+            <span asp-validation-for="PlaceName" class="text-danger"></span>
+        </div>
+
+        <div class="form-group my-2">
+            <label asp-for="StartDate" class="control-label">Дата начала*</label>
+            <input asp-for="StartDate" class="login-form__input form-control" type="datetime-local"/>
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="EndDate" class="control-label">Дата окончания</label>
+            <input asp-for="EndDate" class="login-form__input form-control" type="datetime-local" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+
+        @{
+            for (int i = 0; i < Model.Measures.Count; i++)
+            {
+                <input type="hidden" asp-for="Measures[i].Id"/>
+                <p class="measureTitle h4 fw-bold">@Model.Measures[i].Name</p>
+                <div class="datesBlock">
+                    <div class="form-group my-2">
+                        <label asp-for="Measures[i].Length" class="control-label">Продолжительность*</label>
+                        <input asp-for="Measures[i].Length" type="time" class="login-form__input form-control" />
+                        <span asp-validation-for="Measures[i].Length" class="text-danger"></span>
+                    </div>
+                    <div class="form-group my-2">
+                        <label asp-for="Measures[i].Place" class="control-label">Место проведения*</label>
+                        <input asp-for="Measures[i].Place" class="login-form__input form-control" />
+                        <span asp-validation-for="Measures[i].Place" class="text-danger"></span>
+                    </div>
+                    <div class="form-group my-2">
+                        <label asp-for="Measures[i].OneTime" class="control-label">Частота проведения</label>
+                        <select asp-for="Measures[i].OneTime" class="login-form__input form-control" id="measurePeriodicity">
+                        @{
+                            if (@Model.Measures[i].OneTime)
+                            {
+                                <option selected value="true">Одноразовое</option>
+                                <option value="false">Повторяющееся</option>
+                            }
+                            else
+                            {
+                                <option value="true">Одноразовое</option>
+                                <option selected value="false">Повторяющееся</option>
+                            }
+                        }
+                        </select>
+                    </div>
+                    @{
+                    string singleVisible = "";
+                    string multiVisible = "display:none";
+
+                    if (@Model.Measures[i].OneTime)
+                    {
+                        singleVisible = "";
+                        multiVisible = "display:none";
+                    }
+                    else
+                    {
+                        multiVisible = "";
+                        singleVisible = "display:none";
+                    }
+                    <div style="@multiVisible" id="multiplyDatePick">
+                        <div class="form-group my-2">
+                            <label asp-for="Measures[i].WeekDays" class="control-label">Режим выбора дат</label>
+                            <select asp-for="Measures[i].WeekDays" class="login-form__input form-control" id="measureDatesMode">
+                                @{
+                                if (!Model.Measures[i].WeekDays)
+                                {
+                                    <option selected value="false">Даты</option>
+                                    <option value="true">Дни недели</option>
+                                }
+                                else
+                                {
+                                    <option value="false">Даты</option>
+                                    <option selected value="true">Дни недели</option>
+                                }
+                                }
+                            </select>
+                        </div>
+                        @{
+                        string weekVisible = "";
+                        string multiDaysVisible = "display:none!important;";
+
+                        if (!Model.Measures[i].WeekDays)
+                        {
+                            weekVisible = "display:none!important";
+                            multiDaysVisible = "";
+                        }
+                        else
+                        {
+                            weekVisible = "";
+                            multiDaysVisible = "display:none!important";
+                        }
+                        <div class="form-group my-3 d-flex" id="weekDaysPick" style="@weekVisible">
+                           <div class="w-25">
+                               <p>
+                                   <span>Понедельник <input asp-for="Measures[i].MeasureDays[0].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[0].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[0].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[0].DayNumber" value="0">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[0].Id">
+                               </p>
+                               <p>
+
+                                   <span>Вторник <input asp-for="Measures[i].MeasureDays[1].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[1].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[1].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[1].DayNumber" value="1">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[1].Id">
+                               </p>
+                               <p>
+                                   <span>Среда <input asp-for="Measures[i].MeasureDays[2].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[2].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[2].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[2].DayNumber" value="2">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[2].Id">
+                               </p>
+                               <p>
+                                   <span>Четверг <input asp-for="Measures[i].MeasureDays[3].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[3].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[3].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[3].DayNumber" value="3">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[3].Id">
+                               </p>
+                           </div>
+                           <div class="w-25 ms-5">
+                               <p>
+                                   <span>Пятница <input asp-for="Measures[i].MeasureDays[4].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[4].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[4].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[4].DayNumber" value="4">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[4].Id">
+                               </p>
+                               <p>
+                                   <span>Суббота <input asp-for="Measures[i].MeasureDays[5].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[5].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[5].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[5].DayNumber" value="5">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[5].Id">
+
+                               </p>
+                               <p>
+
+                                   <span>Воскресенье <input asp-for="Measures[i].MeasureDays[6].Checked" type="checkbox" /></span>
+                                   <input required class="login-form__input d-inline-block" type="time" asp-for="Measures[i].MeasureDays[6].TimeSpan">
+                                   <input class="login-form__input d-inline-block my-1" asp-for="Measures[i].MeasureDays[6].Place" placeholder="Место проведения">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[6].DayNumber" value="6">
+                                   <input type="hidden" asp-for="Measures[i].MeasureDays[6].Id">
+                               </p>
+                           </div>
+                        </div>
+                        <div class="form-group my-3 multiDaysPick" style="@multiDaysVisible">
+                            <div id="multiDaysPickHolder">
+                            @{
+                                for (int j = 0; j < Model.Measures[i].MeasureDates.Count; j++)
+                                {
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-group my-2 dateOfMeasureTimeBlock">
+                                            <label asp-for="Measures[i].MeasureDates[j].Datetime" class="control-label">Укажите дату и время</label>
+                                            <input asp-for="Measures[i].MeasureDates[j].Datetime" min="@min" max="@max" type="datetime-local" class="login-form__input form-control" />
+                                            <span asp-validation-for="Measures[i].MeasureDates[j].Datetime" class="text-danger"></span>
+                                        </div>
+                                        <div class="form-group ms-3 dateOfMeasurePlaceBlock">
+                                            <label asp-for="Measures[i].MeasureDates[j].Place" class="control-label">Укажите место проведения</label>
+                                            <input asp-for="Measures[i].MeasureDates[j].Place" class="login-form__input form-control" />
+                                            <span asp-validation-for="Measures[i].MeasureDates[j].Place" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            </div>
+                            <div class="btn btn-primary me-3" id="deleteDateBtn" style="display:none;">Удалить</div>
+                            <div class="btn btn-primary MeasureAddDateBtn" data-index="@i">Добавить</div>
+                        </div>
+                        }
+
+                    </div>
+                    <div style="@singleVisible" class="form-group my-2" id="singleDatePick">
+                        <label asp-for="Measures[i].MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
+                        <input asp-for="Measures[i].MeasureDates[0].Datetime" type="datetime-local" class="login-form__input form-control" />
+                        <span asp-validation-for="Measures[i].MeasureDates[0].Datetime" class="text-danger"></span>
+                    </div>
+                    }
+                </div>
+            }
+        }
+        <input type="submit" value="Сохранить" class="btn btn-primary w-25 mt-3" />
+    </form>
+    <div>
+        <a asp-action="Index">К списку</a>
+    </div>
+</div>
+
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Описание полей:</p>
+        <p class="fw-bold">"Основное место проведения"</p>
+        <p>Укажите на карте место, в котором должно проводиться направление</p>
+
+        <p class="fw-bold h4">Настройка мероприятий</p>
+        <p class="fw-bold">"Продолжительность"</p>
+        <p>Укажите, сколько должно длиться мероприятие</p>
+        <p class="fw-bold">"Частота проведения"</p>
+        <ul>
+            <li>
+                Одноразовое - событие произойдет только один раз, дату и время проведения которого потребуется указать. Например, награждение
+            </li>
+            <li>
+                Повторяющееся - мероприятие будет проводиться несколько раз, для чего потребуется настроить дни повторения.
+                <p class="fw-bold">"Режим выбора дат"</p>
+                <ul>
+                    <li>
+                        Даты - потребуется указать конкретные, даты, в которое будет проводиться мероприятие.
+                    </li>
+                    <li>
+                        Дни недели - выберите дни недели, в которые будет проводиться мероприятие и укажите время.
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+}
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/showImage.js" asp-append-version="true"></script>
+        <script src="~/js/MeasureScript.js" asp-append-version="true"></script>
+        <script src="https://api-maps.yandex.ru/2.1/?apikey=778e1228-3aaa-4187-9f60-b49fbe5c5ce5&lang=ru_RU" type="text/javascript"></script>
+        <script src="~/js/MapScript.js" asp-append-version="true"></script>
+    }
+}
+

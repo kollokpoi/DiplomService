@@ -1,0 +1,35 @@
+﻿@model DiplomService.Models.Organization
+
+@{
+    ViewData["Title"] = "Delete";
+    Layout = "_CabinetLayout";
+}
+
+<div class="container">
+    <h3 class="text-center">Вы уверены, что хотите удалить эту организацию?</h3>
+    <div class="d-flex endHiden image-text_block align-items-center mb-3">
+        @if (Model.Preview != null)
+        {
+            string? mimeType = Model.MimeType;
+
+            if (mimeType != null)
+            {
+                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Preview)" alt="Image" class="w-25 bigMainImage">
+            }
+        }
+        else
+        {
+            <img src="/Images/camara.png" alt="Image" class="w-25 bigMainImage">
+        }
+        <div class="ms-5">
+            <p class="my-1"><span class="h5 fw-bold">Название:</span>@Model.Name</p>
+            <p class="h5 fw-bold">Описание:</p>
+            <p>@Model.Description</p>
+        </div>
+    </div>
+    <form asp-action="Delete" class="d-flex justify-content-center">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl"/>
+        <input type="submit" value="Удалить" class="btn btn-danger w-25" />
+    </form>
+</div>

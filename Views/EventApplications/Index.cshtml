@@ -1,0 +1,89 @@
+﻿@using DiplomService.Models;
+@model List<EventApplication>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+        string baseLink = "/EventApplications/";
+    bool edit = false; ;
+    if (User.IsInRole("WebUser"))
+    {
+        baseLink += "Details/";
+    }
+    else if (User.IsInRole("OrganizationUser"))
+    {
+        baseLink += "Edit/";
+        edit = true;
+    }
+}
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Заявки на участие в событии.</p>
+    </div>
+</div>
+<div class="container">
+    <div class="grid-samecolumn w-100 px-4">
+        @if (edit)
+        {
+            <p>Учереждение</p>
+            <p>Количество участников</p>
+        }
+        else
+        {
+            <p>Событие</p>
+        }
+        <p>Дата отправки</p>
+        <p>Статус</p>
+    </div>
+    @foreach(var item in Model){
+        <a href="@baseLink@item.Id" class="item-block my-3 grid-samecolumn">
+            @{
+                if (edit)
+                {
+                    <span>@item.Institution</span>
+                    <span>@item.ApplicationData.Count</span>
+                    <span>@item.TimeOfSend</span>
+                    <span class="fw-bold"> 
+                        @if (item.Accepted!=null)
+                        {
+                            if (item.Accepted.Value)
+                            {
+                                <span class="text-success">принята</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger">отклонена</span>
+                            }
+                        }
+                        else
+                        {
+                            <span>на рассмотрении</span>
+                        }
+                    </span>
+                }
+                else
+                {
+                    <span>@item.Event.Name</span>
+                    <span class="text-center">@item.TimeOfSend</span>
+                    <span class="fw-bold"> 
+                        @if (item.Accepted!=null)
+                        {
+                            if (item.Accepted.Value)
+                            {
+                                <span class="text-success">принята</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger">отклонена</span>
+                            }
+                        }
+                        else
+                        {
+                            <span>на рассмотрении</span>
+                        }
+                    </span>
+                }
+            }
+        </a>
+    }
+</div>

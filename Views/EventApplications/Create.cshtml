@@ -1,0 +1,119 @@
+﻿@model DiplomService.ViewModels.EventApplication.EventApplicationViewModel
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="intro" style="height:50vh">
+    <div class="intro__column">
+        <p class="title-text">Заполните список участников</p>
+    </div>
+</div>
+<div class="container">
+    <form method="post" enctype="multipart/form-data" id="applicationForm">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <input type="hidden" asp-for="ApplicationSenderId"/>
+        <input type="hidden" asp-for="EventId"/>
+        <div class="form-group my-2 mb-5">
+            <label asp-for="@Model.Institution" class="control-label h5">Название учебного заведения*</label>
+            <input asp-for="@Model.Institution" class="login-form__input form-control" />
+            <span asp-validation-for="@Model.Institution" class="text-danger"></span>
+        </div>
+        <div id="holder">
+            <p class="h5">Список заявок:</p>
+            @{
+                for (int i = 0; i < Model.ApplicationDatas.Count; i++)
+                {
+                    <p class="measureTitle">Участник</p>
+                    <div class="itemBlock">
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].SecondName" class="control-label">Фамилия*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].SecondName" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].SecondName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].Name" class="control-label">Имя*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].Name" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].Name" class="text-danger"></span>
+                        </div>
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].LastName" class="control-label">Отчество*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].LastName" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].LastName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].Course" class="control-label">Курс или класс*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].Course" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].Course" class="text-danger"></span>
+                        </div>
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].PhoneNumber" class="control-label">Номер телефона*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].PhoneNumber" type="tel" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].PhoneNumber" class="text-danger"></span>
+                        </div>
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].Email" class="control-label">Электронная почта*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].Email" type="email" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].Email" class="text-danger"></span>
+                        </div>
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].Birthday" class="control-label">Дата рождения*</label>
+                            <input asp-for="@Model.ApplicationDatas[i].Birthday" type="date" class="login-form__input form-control" />
+                            <span asp-validation-for="@Model.ApplicationDatas[i].Birthday" class="text-danger"></span>
+                        </div>
+                        @if (Model.DivisionsExist)
+                        {
+                        <div class="form-group my-2">
+                            <label asp-for="@Model.ApplicationDatas[i].DivisionId" class="control-label">Подразделение*</label>
+                            <select asp-for="@Model.ApplicationDatas[i].DivisionId" class="login-form__input form-control">
+                                @{
+                                    for (int j = 0; j < Model.Divisions.Count; j++)
+                                    {
+                                        <option value="@Model.Divisions[j].Id">@Model.Divisions[j].Name</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="@Model.ApplicationDatas[i].Birthday" class="text-danger"></span>
+                        </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <div class="btn btn-primary w-25 mt-3" id="addBtn">
+                Добавить
+            </div>
+            <input type="submit" value="Отправить" class="btn btn-primary w-25 mt-3" />
+        </div>
+    </form>
+</div>
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Последовательность действий:</p>
+        <ul>
+            <li>
+                Заполните всю информацию об участнике, которого хотите зарегистрировать.
+            </li>
+            <li>
+                Выбирете направление, на которое хотите зарегистрировать участника.
+            </li>
+            <li>
+                Сохраните информацию.
+            </li>
+            <li>
+                Ожидайте ответа организатора. Статус заявки на участие можно посмотреть в личном кабинете.
+            </li>
+        </ul>
+   
+    </div>
+}
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/EventApplication.js"></script>
+    }
+}

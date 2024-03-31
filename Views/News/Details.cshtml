@@ -1,0 +1,68 @@
+﻿@model DiplomService.Models.News;
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="intro" style="height:40vh;">
+    <div class="intro__column">
+        @{
+             <p class="title-text"> @Model.Title</p>
+        }
+    </div>
+</div>
+<div class="container">
+    <div class="d-flex mb-3">
+        @{
+            @if (Model is not null && Model.Image is not null)
+            {
+                string? mimeType = Model.MimeType; // MIME-тип по умолчанию
+
+                if (mimeType is not null)
+                {
+                    <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Image)" alt="Image" class="item-block__image w-25 my-2 me-2">
+                }
+            }
+        }
+        <div class="w-75">
+            <p class=" my-2 h3 fw-bold">@Model.Title</p>
+            <p class="splitText">@Model.Description</p>
+        </div>
+    </div>
+    @for (int i = 0; i < Model.Sections.Count; i++)
+    {
+        <div class="my-4">
+            <p class="my-2 fw-bold h4">@Model.Sections[i].Title</p>
+            <p class="splitText">
+                 @if (Model is not null && Model.Sections[i].Image is not null)
+                 {
+                     string? mimeType = Model.Sections[i].MimeType; // MIME-тип по умолчанию
+                     string align = "left";
+                     int point = i%3;
+                     if (point==1)
+                     {
+                         align = "right";
+                     }
+                     if (Model.Sections[i].Image is not null)
+                     {
+                         <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Sections[i].Image)" alt="Image" style="float:@align;" class="item-block__image w-25 m-3">
+                     }
+                 }
+                 @Model.Sections[i].Description
+             </p>
+        </div>
+    }
+    <div class="mt-3 d-flex justify-content-center">
+        <a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" id="addBtn" class="btn-primary d-block login-form__submit w-25 ">Перейти к событию</a>
+        @if (ViewBag.Editer is not null && ViewBag.Editer is true)
+        {
+            <a asp-controller="News" asp-action="Edit" asp-route-id="@Model.Id" id="addBtn" class="btn-primary d-block login-form__submit w-25 mx-2">Редактировать</a>
+            <form asp-controller="News" asp-action="Delete" asp-route-id="@Model.Id" class="w-25 mx-2">
+                <button class="btn-danger d-block login-form__submit w-100">Удалить</button>
+            </form>
+        }
+    </div>
+
+
+    
+</div>

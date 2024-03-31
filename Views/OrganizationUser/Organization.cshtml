@@ -1,0 +1,83 @@
+﻿@using DiplomService.ViewModels.OrganizationViewModels
+@model OrganizationViewModel
+
+@{
+    ViewData["Title"] = "Edit";
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Информация об организации</p>
+    </div>
+</div>
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+    <div class="w-100 h-50 d-flex flex-column justify-content-center">
+        <p class="text-center h5">Информация об организации</p>
+        <form method="post" enctype="multipart/form-data">
+
+            <div class="w-100">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <span class="text-danger">@ViewBag.Error</span>
+                <span class="text-success">@ViewBag.Result</span>
+                <input type="hidden" asp-for="Organization.Id" />
+            </div>
+            <div class="d-flex align-items-center mb-4">
+                <div class="w-25 me-4">
+                    <label asp-for="@Model.ImageFile" class="control-label"></label>
+                    <div class="form-group d-flex flex-column">
+                        @if (Model.Organization.Preview != null)
+                        {
+                            string? mimeType = Model.Organization.MimeType;
+
+                            if (mimeType != null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Organization.Preview)" alt="Image" id="previewImage" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">
+                        }
+                        <div>
+                            <input asp-for="ImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                            <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
+                        </div>
+                    </div>
+                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+                </div>
+                <div class="w-75">
+                    <div class="form-group my-2">
+                        <label asp-for="Organization.Name" class="control-label">Название</label>
+                        <input asp-for="Organization.Name" class="form-control login-form__input" placeholder="Название" />
+                        <span asp-validation-for="Organization.Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group my-2">
+                        <label asp-for="Organization.Email" class="control-label">Почтовый адрес организации</label>
+                        <input asp-for="Organization.Email" class="form-control login-form__input" />
+                        <span asp-validation-for="Organization.Email" class="text-danger"></span>
+                    </div>
+                    <div class="form-group my-2">
+                        <label asp-for="Organization.Description" class="control-label">Описание</label>
+                        <textarea asp-for="Organization.Description" class="form-control login-form__input textarea-input"></textarea>
+                        <span asp-validation-for="Organization.Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <input type="submit" value="Сохранить" class="login-form__submit d-block w-25 m-lg-auto" />
+        </form>
+    </div>
+</div>
+
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/showImage.js" asp-append-version="true"></script>

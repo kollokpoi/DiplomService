@@ -1,0 +1,57 @@
+﻿@model IEnumerable<DiplomService.Models.OrganizationFolder.OrganizationApplication>;
+@{
+
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Заявки на регистрацию организаций.</p>
+    </div>
+</div>
+
+
+
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+    <div class="circled-search__block">
+        <input type="text" class="circled-search__input">
+    </div>
+    @foreach (var item in Model)
+    {
+
+        <a asp-controller="Admin" asp-action="EditApplication" asp-route-id="@item.Id" class="item-block d-flex flex-row justify-content-between my-3">
+            <span class="item-block__text fw-bold name">@item.OrganizationName</span>
+            <span class="item-block__text ">@item.OrganizationEmail</span>
+            <div class="d-flex col-4 justify-content-between">
+                <span class="item-block__text">@item.DateOfSend</span>
+                @if (!item.Checked)
+                {
+                    <span class="item-block__text">Требует рассмотрения</span>
+                }
+                else
+                {
+                    @if (!item.ApplicationApproved)
+                    {
+                        <span class="item-block__text">Отклонена</span>
+                    }
+                    else
+                    {
+                        <span class="item-block__text">Одобрена</span>
+                    }
+                }
+            </div>
+        </a>
+    }
+</div>
+
+@section Scripts{
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/searchScript.js"></script>
+    <script src="~/js/searchInputPopUp.js"></script>
+}

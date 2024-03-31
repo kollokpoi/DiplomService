@@ -1,0 +1,37 @@
+﻿@using Microsoft.AspNetCore.Identity;
+
+<nav class="cabinet__nav">
+    @{
+        if (User.IsInRole("Administrator"))
+        {
+            <a href="/Admin/Dashboard" class="cabinet-nav__item">Панель управления</a>
+            <a href="/Admin/Applications" class="cabinet-nav__item">Заявки на регистрацию</a>
+            <a href="/User/List" class="cabinet-nav__item">Пользователи</a>
+            <a href="/Admin/Events" class="cabinet-nav__item">События</a>
+            <a href="/Admin/News" class="cabinet-nav__item">Новости</a>
+            <a href="/Admin/Organizations" class="cabinet-nav__item">Организации</a>
+            <a href="/Dashboard" class="cabinet-nav__item">События на сервере</a>
+        }
+        else if (User.IsInRole("WebUser"))
+        {
+            <a href="/WebUser/Applications" class="cabinet-nav__item">Заявки на участие</a>
+        }
+        else if (User.IsInRole("OrganizationUser"))
+        {
+           <a href="/OrganizationUser/Organization" class="cabinet-nav__item">Организация</a>
+           <a href="/OrganizationUser/OrganizationEvents" class="cabinet-nav__item">События</a>
+           <a href="/OrganizationUser/OrganizationUsers" class="cabinet-nav__item">Работники организации</a>
+           <a href="/EventApplications/" class="cabinet-nav__item">Заявки на участие</a>
+        }
+        else
+        {
+            
+        }
+    }
+    <a href="/Cabinet/Edit" class="cabinet-nav__item">Личные данные</a>
+    <form class="form-inline cabinet-nav__item" method="post" asp-controller="Cabinet" asp-action="Logout">
+        <button type="submit" style="border:none;background:none;">
+            Выйти
+        </button>
+    </form>
+</nav>

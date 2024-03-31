@@ -1,0 +1,113 @@
+﻿@model DiplomService.ViewModels.User.UserViewModel
+
+@{
+    ViewData["Title"] = "Edit";
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Изменение личных данных</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+    <div class="h-50 d-flex flex-column justify-content-center">
+        <form asp-action="Edit" enctype="multipart/form-data">
+            <div class="w-100">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <span class="text-danger">@ViewBag.Error</span>
+                <span class="text-success">@ViewBag.Result</span>
+                <input type="hidden" asp-for="Id" />
+            </div>
+            <div class="d-flex align-items-center mb-4">
+                <div class="w-25 me-4">
+                    <label asp-for="@Model.PreviewImageFile" class="control-label"></label>
+                    <div class="form-group d-flex flex-column">
+                        @if (Model.Image != null)
+                        {
+                            string? mimeType = Model.MimeType;
+
+                            if (mimeType != null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Image)" alt="Image" id="previewImage" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">
+                        }
+                        <div>
+                            <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                            <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
+                        </div>
+                    </div>
+                    <span asp-validation-for="PreviewImageFile" class="text-danger"></span>
+                    <div>
+                        <a asp-action="EditPassword">Смена пароля</a>
+                    </div>
+                </div>
+                <div class="w-75">
+                    <div class="w-100 my-2">
+                        <label asp-for="SecondName" class="control-label text-left"></label>
+                        <input asp-for="SecondName" class="login-form__input" placeholder="Фамилия*" />
+                        <span asp-validation-for="SecondName" class="text-danger"></span>
+                    </div>
+                    <div class="w-100 my-2">
+                        <label asp-for="Name" class="control-label"></label>
+                        <input asp-for="Name" class="login-form__input" placeholder="Имя*" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="w-100 my-2">
+                        <label asp-for="LastName" class="control-label"></label>
+                        <input asp-for="LastName" class="login-form__input" placeholder="Отчество*" />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+
+                    <div class="w-100 my-2">
+                        <label asp-for="Email" class="control-label"></label>
+                        <input asp-for="Email" class="login-form__input" placeholder="Почта*" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="w-100 my-2">
+                        <label asp-for="PhoneNumber" class="control-label"></label>
+                        <input asp-for="PhoneNumber" class="login-form__input" placeholder="Номер телефона" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <input type="submit" value="Сохранить" class="login-form__submit d-block w-25 m-lg-auto" />
+        </form>
+    </div>
+</div>
+
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Для изменения данных:</p>
+        <ul>
+            <li>
+                Обновите значения в полях
+            </li>
+            <li>
+                Нажмите "Сохранить"
+            </li>
+        </ul>
+        <p class="fw-bold">Для смены пароля нажмите соответствующую кнопку под изображением</p>
+    </div>
+}
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/showImage.js" asp-append-version="true"></script>
+    }
+}

@@ -1,0 +1,70 @@
+﻿@model DiplomService.ViewModels.EventApplication.ApplicationDataViewModel
+
+@{
+    var index = ViewData["Index"] as int? ?? 0;
+}
+
+<p class="measureTitle">Участник @index</p>
+<div class="itemBlock">
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.SecondName" class="control-label">Фамилия*</label>
+        <input asp-for="@Model.ApplicationDatas.SecondName" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)_SecondName" name="ApplicationDatas[@index].SecondName" />
+        <span data-valmsg-for="ApplicationDatas[@index].SecondName" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.Name" class="control-label">Имя*</label>
+        <input asp-for="@Model.ApplicationDatas.Name" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)_Name" name="ApplicationDatas[@index].Name" />
+        <span data-valmsg-for="ApplicationDatas[@index].Name" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.LastName" class="control-label">Отчество*</label>
+        <input asp-for="@Model.ApplicationDatas.LastName" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)_LastName" name="ApplicationDatas[@index].LastName" />
+        <span data-valmsg-for="ApplicationDatas[@index].LastName" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.Course" class="control-label">Курс или класс*</label>
+        <input asp-for="@Model.ApplicationDatas.Course" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)_Course" name="ApplicationDatas[@index].Course" value=""/>
+        <span data-valmsg-for="ApplicationDatas[@index].Course" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.PhoneNumber" class="control-label">Номер телефона*</label>
+        <input asp-for="@Model.ApplicationDatas.PhoneNumber" type="tel" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)_PhoneNumber" name="ApplicationDatas[@index].PhoneNumber" />
+        <span data-valmsg-for="ApplicationDatas[@index].PhoneNumber" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.Email" class="control-label">Электронная почта*</label>
+        <input asp-for="@Model.ApplicationDatas.Email" type="email" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)__ApplicationDatas_Email" name="ApplicationDatas[@index].Email" />
+        <span data-valmsg-for="ApplicationDatas[@index].Email" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    <div class="form-group my-2">
+        <label asp-for="@Model.ApplicationDatas.Birthday" class="control-label">Дата рождения*</label>
+        <input asp-for="@Model.ApplicationDatas.Birthday" type="date" class="login-form__input form-control"
+               id="ApplicationDatas_@(index)__ApplicationDatas_Birthday" name="ApplicationDatas[@index].Birthday" value=""/>
+        <span data-valmsg-for="ApplicationDatas[@index].Birthday" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+    </div>
+    @if (Model.DivisionsExist)
+    {
+        <div class="form-group my-2">
+            <label asp-for="@Model.ApplicationDatas.DivisionId" class="control-label">Подразделение*</label>
+            <select asp-for="@Model.ApplicationDatas.DivisionId" class="login-form__input form-control"
+                id="ApplicationDatas_@(index)_DivisionId" name="ApplicationDatas[@index].DivisionId">
+                @{
+                    for (int j = 0; j < Model.Divisions.Count; j++)
+                    {
+                        <option value="@Model.Divisions[j].Id">@Model.Divisions[j].Name</option>
+                    }
+                }
+            </select>
+            <span data-valmsg-for="ApplicationDatas[@index].DivisionId" class="text-danger field-validation-valid" data-valmsg-replace="true"></span>
+        </div>
+    }
+    <div class="form-group my-2 d-flex justify-content-end">
+        <p type="submit" class="btn btn-danger deleteButton">Удалить</p>
+    </div>
+</div>

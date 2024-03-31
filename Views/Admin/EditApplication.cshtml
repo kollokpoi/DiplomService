@@ -1,0 +1,56 @@
+﻿@model DiplomService.Models.OrganizationFolder.OrganizationApplication
+
+@{
+    ViewData["Title"] = "EditApplication";
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Заявки на регистрацию.</p>
+    </div>
+</div>
+
+
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+     <form asp-action="EditApplication" method="post" enctype="multipart/form-data">
+         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+         <input type="hidden" asp-for="Id" />
+         <div class="form-group">
+             <p сlass="form-control">Название организации: @Model.OrganizationName</p>
+         </div>
+         <div class="form-group">
+             <p сlass="form-control">Почта организации: @Model.OrganizationEmail</p>
+         </div>
+         <div class="form-group">
+             <p сlass="form-control">Почта пользователя: @Model.UserEmail</p>
+         </div>
+
+         <div class="form-group">
+             <p сlass="form-control">Дата подачи: @Model.DateOfSend</p>
+         </div>
+         <div class="form-group">
+             <p сlass="form-control login-form__input">Комментарий: @Model.Message</p>
+         </div>
+         <div class="form-group">
+             <label asp-for="ResponseMessage" class="control-label"></label>
+             <textarea asp-for="ResponseMessage" class="login-form__input h-auto" rows="3" placeholder="Комментарий">
+
+             </textarea>
+             <span asp-validation-for="ResponseMessage" class="text-danger"></span>
+         </div>
+         @if (!Model.Checked)
+         {
+             <div mx-auto>
+                 <button type="submit" name="ApplicationApproved" value="true" class="login-form__submit">Принять</button>
+                 <button type="submit" name="ApplicationApproved" value="false" class="login-form__submit">Отклонить</button>
+             </div>
+         }
+     </form>
+</div>

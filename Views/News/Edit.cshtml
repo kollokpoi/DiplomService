@@ -1,0 +1,138 @@
+﻿@using DiplomService.ViewModels.News;
+@model NewsViewModel
+
+@{
+    ViewData["Title"] = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="intro" style="height:40vh;">
+    <div class="intro__column">
+        <p class="title-text">Добавление новости о событии @Model.EventName</p>
+    </div>
+</div>
+<div class="container">
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="EventId" />
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div id="ItemsHolder">
+            <p class="display-6 fw-bold" title="Эта часть будет отображаться на странице с новостями">Основная часть</p>
+            <div class="d-flex align-items-center my-2 justify-content-between">
+                <div class="me-2 w-25">
+                    <label asp-for="ImageFile" class="control-label fw-bold">Изображение</label>
+                    <div class="form-group">
+                        @{
+                            @if (Model is not null && Model.PriviewImage is not null)
+                            {
+                                string? mimeType = Model.MimeType; // MIME-тип по умолчанию
+
+                                if (mimeType is not null)
+                                {
+                                    <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.PriviewImage)" alt="Image" class="item-block__image">
+                                }
+                            }
+                            else
+                            {
+                                <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                            }
+                        }
+                        <input asp-for="ImageFile" style="display:none" accept=".png, .jpg, .jpeg" class="btn previewImageInput" type="file" />
+                        <p class="login-form__submit pointer-event text-center previewImageButton">Выберите файл</p>
+                    </div>
+                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+                </div>
+                <div class="w-75">
+                    <div class="form-group my-2">
+                        <label asp-for="Name" class="control-label"></label>
+                        <input asp-for="Name" class="login-form__input form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group my-2">
+                        <label asp-for="Description" class="control-label"></label>
+                        <textarea asp-for="Description" class="login-form__input textarea-input textarea-input"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <p class="display-6 fw-bold" title="Эта часть будет отображаться на странице с новостями">Подзаголовки</p>
+            @for (int i = 0; i < Model.Sections.Count; i++)
+            {
+                <div class="d-flex align-items-center sectionBlock position-relative">
+                    <input type="hidden" asp-for="Sections[i].Id" />
+
+                    <div class="my-2 me-2 w-25">
+                        <label asp-for="Sections[i].ImageFile" class="control-label fw-bold"></label>
+                        <div class="form-group ">
+                            @{
+                                @if (Model is not null && Model.Sections[i].Image is not null)
+                                {
+                                    string? mimeType = Model.Sections[i].MimeType; // MIME-тип по умолчанию
+
+                                    if (mimeType is not null)
+                                    {
+                                        <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Sections[i].Image)" alt="Image" class="item-block__image previewImage">
+                                    }
+                                }
+                                else
+                                {
+                                    <img src="/Images/camara.png" alt="Image" class="item-block__image previewImage">
+                                }
+                            }
+
+                            <input asp-for="Sections[i].ImageFile" style="display:none" accept=".png, .jpg, .jpeg" class="btn previewImageInput" type="file" />
+                            <p class="login-form__submit pointer-event text-center previewImageButton">Выберите файл</p>
+
+                        </div>
+                        <span asp-validation-for="Sections[i].ImageFile" class="text-danger"></span>
+                    </div>
+                    <div class="w-75">
+                        <label asp-for="Sections[i].Name" class="control-label"></label>
+                        <div class="d-flex align-items-center">
+                            <div class="form-group my-2 w-100">
+                                <input asp-for="Sections[i].Name" class="login-form__input form-control" />
+                                <span asp-validation-for="Sections[i].Name" class="text-danger"></span>
+                            </div>
+                            <div class="ms-2">
+                                <input type="hidden" asp-for="Sections[i].ToDelete" />
+                                <div class="deleteBtn" data-index="@i">
+                                </div>
+                            </div>
+                        </div>
+     
+                        <div class="form-group my-2">
+                            <label asp-for="Sections[i].Description" class="control-label"></label>
+                            <textarea asp-for="Sections[i].Description" class="login-form__input textarea-input"></textarea>
+                            <span asp-validation-for="Sections[i].Description" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        <div class="form-group d-flex justify-content-around">
+            <a href="" id="addBtn" class="btn-primary login-form__submit w-25" style="padding: 10px 0">Добавить подзаголовок</a>
+            <input type="submit" value="Сохранить" class="btn-primary login-form__submit w-25" />
+        </div>
+    </form>
+</div>
+
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Описание:</p>
+        <p class="fw-bold">"Основная часть":</p>
+        <p>Эта часть и информация в ней будет отображена в списке новостей главной страницы и странице новостей события</p>
+        <p class="fw-bold">"Подзаголовки":</p>
+        <p>Это блоки, предназначенные для группировки информации и позволяют разделить всю новость по частям.</p>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/showImage.js"></script>
+    <script src="~/js/newsScript.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,13 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <a href="/Cabinet/" class="header__button">Кабинет</a>
+}
+else
+{
+    <a href="/Account/Login" class="header__button">Авторизация</a>
+}

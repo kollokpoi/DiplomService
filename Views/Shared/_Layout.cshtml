@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DiplomService</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+    @RenderSection("Styles",false)
+</head>
+<body>
+    <header>
+        <div class="header__body">
+            <div class="header__nav-div">
+                <a href="/Home/">
+                    <img src="" alt="" class="header__logo">
+                </a>
+                <nav class="header__nav">
+                    <a href="/News/" class="header-nav__item">Новости</a>
+                    <a href="/Events/" class="header-nav__item">Текущие события</a>
+                    <a href="/Organizations/" class="header-nav__item">Участники</a>
+                </nav>
+            </div>
+            <nav class="header__nav">
+                <partial name="_LoginPartial" />
+            </nav>
+        </div>
+    </header>
+    <header class="pop-up-header">
+        <div class="header__body">
+           <div class="header__nav-div">
+               <a href="/Home/" class="header__logo">
+                   <img src="" alt="" >
+               </a>
+                <nav class="header__nav">
+                    <a href="/News/" class="header-nav__item">Новости</a>
+                    <a href="/Events/" class="header-nav__item">Текущие события</a>
+                    <a href="/Organizations/" class="header-nav__item">Участники</a>
+                </nav>
+            </div>
+            <partial name="_LoginPartial"/>
+        </div>
+    </header>
+    @RenderBody()
+    
+    <div class ="fixed-block">
+        @await RenderSectionAsync("Faq", false)
+        <a href="#" class="fixed-block__image" style="display:none;"></a>
+    </div>
+    
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - DiplomService - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="/js/site.js"></script>
+    @RenderSection("Scripts",false)
+</body>
+</html>

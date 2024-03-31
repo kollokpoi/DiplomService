@@ -1,0 +1,150 @@
+﻿@using DiplomService.ViewModels.Email;
+@model ApplicationEmailViewModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        @@import"https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap";
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Montserrat",sans-serif;
+            text-decoration: none;
+        }
+
+        .centredBlock {
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .message {
+            padding: 1rem 0;
+            width: 100%;
+            background-color: #0000ff8c;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .title {
+            font-size: 2.6rem;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .upperBlock {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .messageBody {
+            padding: 5rem 2.9rem;
+            background-color: white;
+            border-radius: 8px;
+        }
+
+        .messageBody__text {
+            font-size: 1.1rem;
+            margin: .8rem 0;
+        }
+
+        .font__bold {
+            font-weight: bold;
+        }
+
+        .upperText {
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+
+            .upperText::after {
+                content: '';
+                margin-top: .8rem;
+                width: 100%;
+                height: 1px;
+                display: block;
+                background-color: black;
+            }
+
+        .messageBody__button {
+            color: white;
+            background-color: #2F2FA2;
+            padding: .7rem 2rem;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            transition: .5s;
+        }
+
+            .messageBody__button:hover {
+                background-color: #242582;
+            }
+
+        .centredFlex {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="message">
+        <div class="container centredBlock">
+            <p class="title font__bold">PrograMath</p>
+            <div class="messageBody ">
+                @{
+                    if (Model.ApplicationApproved)
+                    {
+                        <div class="centredBlock upperBlock font__bold">
+                            <span>Ваша заявка одобрена.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="centredBlock upperBlock font__bold">
+                            <span>Ваша заявка отклонена.</span>
+                        </div>
+                    }
+                }
+                @{
+                    if ((Model.ApplicationApproved))
+                    {
+                        <p class="messageBody__text upperText">@Model.DateOfSend.ToShortDateString() вы подавали заявку на платформу <span class="font__bold">PrograMath</span>
+                            от имени организации <span class="font__bold">@Model.OrganizationName</span> и ваша заявка была принята.</p>
+                        <p class="messageBody__text" style="margin-bottom: 2rem;">Теперь вы можете организовывать собственные события. Для этого требуетя завершить регистрацию и заполнить недостающие данные.</p>
+
+                        <p class="messageBody__text"><span class="font__bold">Ваш логин: </span>@Model.UserEmail</p>
+                        <p class="messageBody__text"><span class="font__bold">Ваш Пароль: </span>@Model.Password</p>
+                    }
+                    else
+                    {
+                        <p class="messageBody__text upperText">@Model.DateOfSend.ToShortDateString() вы подавали заявку на платформу <span class="font__bold">PrograMath</span>
+                            от имени организации <span class="font__bold">@Model.OrganizationName</span> и ваша заявка была отклонена.</p>
+                    }
+                }
+                
+                <p class="messageBody__text"><span class="font__bold">Комментарий администратора:</span>@Model.ResponseMessage</p>
+
+                <div class="centredFlex">
+                    <a href="@Model.BaseUrl" class="messageBody__button">Завершить регистрацию</a>
+                </div>
+
+                <p class="messageBody__text"><span class="font__bold">Контакты для связи:</span></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

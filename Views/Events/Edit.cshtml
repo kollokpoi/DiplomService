@@ -1,0 +1,152 @@
+﻿@using DiplomService.ViewModels.Event
+@model EventViewModel
+
+@{
+    ViewData["Title"] = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Заполните данные об организуемом мероприятии</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="navigation-block">
+        <a href="#" class="cabinet-nav__item">Событие</a>
+        <a asp-action="Index" asp-controller="Measures" asp-route-id="@Model.Id" class="cabinet-nav__item">Расписание</a>
+        @if (Model.DivisionsExist)
+        {
+            <a asp-action="Index" asp-controller="Divisions" asp-route-id="@Model.Id" class="cabinet-nav__item">Подразделения</a>
+        }
+    </div>
+
+    <form id="eventForm" class="eventPage" enctype="multipart/form-data" method="post">
+        <p class="display-6">Заполните основную информацию</p>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="d-flex align-items-center">
+            <div class="my-2 me-2">
+                <label asp-for="PreviewImageFile" class="control-label"></label>
+                <div class="form-group">
+                    @{
+                        @if (Model is not null && Model.PriviewImage is not null)
+                        {
+                            string? mimeType = Model.MimeType; // MIME-тип по умолчанию
+
+                            if (mimeType is not null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.PriviewImage)" id="previewImage" alt="Image" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">
+                        }
+                    }
+                    <div>
+                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                        <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
+                    </div>
+                </div>
+                <span asp-validation-for="PreviewImageFile" class="text-danger"></span>
+            </div>
+            <div class="w-100">
+                <div class="form-group my-2">
+                    <label asp-for="Name" class="control-label"></label>
+                    <input asp-for="Name" class="login-form__input form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="form-group my-2">
+                    <label asp-for="Description" class="control-label"></label>
+                    <textarea asp-for="Description" class="login-form__input form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                <div class="form-group my-2">
+                    <label asp-for="PublicEvent" class="control-label"></label>
+                    <select asp-for="PublicEvent" class="login-form__input form-control" title="Будет ли отображаться в общем списке">
+                        <option selected value="true">Публичное</option>
+                        <option value="false">Скрытое</option>
+                    </select>
+                    <span asp-validation-for="PublicEvent" class="text-danger"></span>
+                </div>
+
+            </div>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="@Model.DivisionsExist" class="control-label"></label>
+            <select asp-for="@Model.DivisionsExist" class="login-form__input form-control" title="Будет ли отображаться в общем списке">
+                @{
+                    if (@Model.DivisionsExist)
+                    {
+                        <option selected value="true">Да</option>
+                        <option value="false">Нет</option>
+                    }
+                    else
+                    {
+                        <option value="true">Да</option>
+                        <option selected value="false">Нет</option>
+                    }
+                }
+            </select>
+            <span asp-validation-for="@Model.DivisionsExist" class="text-danger"></span>
+        </div>
+        <div class="form-group my-2 position-relative" id="mapHolder" style="display:none">
+            <label asp-for="PlaceName" class="control-label">Основное место проведения*</label>
+            <input asp-for="PlaceName" class="login-form__input form-control my-2" />
+            <div id="suggestionsDropdown" style="position: absolute; display: none; z-index:10"></div>
+            <input type="hidden" asp-for="Longitude" />
+            <input type="hidden" asp-for="Latitude" />
+            <div id="map"></div>
+            <span asp-validation-for="PlaceName" class="text-danger"></span>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="@Model.DateOfStart" class="control-label"></label>
+            <input asp-for="@Model.DateOfStart" class="login-form__input form-control" />
+            <span asp-validation-for="@Model.DateOfStart" class="text-danger"></span>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="@Model.DateOfEnd" class="control-label"></label>
+            <input asp-for="@Model.DateOfEnd" class="login-form__input form-control" />
+            <span asp-validation-for="@Model.DateOfEnd" class="text-danger"></span>
+        </div>
+        <div class="d-flex justify-content-end">
+            <input class="btn btn-primary next-button my-3 w-25" type="submit" value="Сохранить" />
+        </div>
+    </form>
+</div>
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Описание полей:</p>
+        <p class="fw-bold">"Имеются ли направления":</p>
+        <ul>
+            <li>
+                Отсутствуют - означает, что в вашем событии не будет разделения участников на направления. Вам потребуется указать основное место проведения.
+            </li>
+            <li>
+                Имеются - в событии будет присутствовать разделение на направления. Настроить их можно будет в дальнейшем.
+            </li>
+        </ul>
+        <p class="fw-bold">"Является ли событие публичным"</p>
+        <ul>
+            <li>
+                Публичное - событие будет отображаться в общем списке и участники смогут самостоятельно подавать заявки на участие.
+            </li>
+            <li>
+                Скрытое - событие не будет показано в общем списке, а участников вам потребуется добавлять самостоятельно.
+            </li>
+        </ul>
+    </div>
+}
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/switchDivisionExistence.js"></script>
+        <script src="~/js/showImage.js" asp-append-version="true"></script>
+        <script src="https://api-maps.yandex.ru/2.1/?apikey=375cc711-8399-4720-be09-5496b07e2890&lang=ru_RU" type="text/javascript"></script>
+        <script src="~/js/MapScript.js" asp-append-version="true"></script>
+    }
+}

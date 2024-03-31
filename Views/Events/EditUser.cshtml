@@ -1,0 +1,118 @@
+﻿@using DiplomService.Models.Users
+@using DiplomService.Services;
+@model MobileUser;
+
+@{
+    ViewData["Title"] = "Участники события";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int eventId = ViewBag.eventId;
+}
+<div class="intro" style="height:50vh">
+    <div class="intro__column">
+        <p class="title-text">Изменение информации о @Model.SecondName @Model.LastName</p>
+    </div>
+</div>
+
+<div class="container"> 
+    <form id="eventForm" class="eventPage" enctype="multipart/form-data" method="post">
+        <p class="display-6">Заполните основную информацию</p>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="Id"/>
+        <input type="hidden" id="eventId" value="@eventId" />
+        <div class="d-flex align-items-center">
+            <div class="my-2 me-2">
+                <div class="form-group">
+                    @{
+                        @if (Model is not null && Model.Image is not null)
+                        {
+                            string? mimeType =ImageWorker.GetImageMimeType(Model.Image); // MIME-тип по умолчанию
+
+                            if (mimeType is not null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Image)" id="previewImage" alt="Image" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">
+                        }
+                    }
+                </div>
+            </div>
+            <div class="w-100">
+                <div class="form-group my-2">
+                    <label asp-for="SecondName" class="control-label">Фамилия:</label>
+                    <p  class="login-form__input form-control">@Model.SecondName</p>
+                </div>
+
+                <div class="form-group my-2">
+                    <label asp-for="Name" class="control-label">Имя:</label>
+                    <p  class="login-form__input form-control">@Model.Name</p>
+                </div>
+
+                <div class="form-group my-2">
+                    <label asp-for="LastName" class="control-label">Отчество:</label>
+                    <p  class="login-form__input form-control">@Model.LastName</p>
+                </div>
+            </div>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="PhoneNumber" class="control-label">Номер телефона:</label>
+            <p class="login-form__input form-control">@Model.PhoneNumber</p>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="Email" class="control-label">Почтовый адрес:</label>
+            <p class="login-form__input form-control">@Model.Email</p>
+        </div>
+        <p class="fw-bold h3">Подразделения</p>
+        @for (int i = 0; i<Model.UserDivisions.Count; i++)
+        {
+             <div class="my-2 item-block py-2 d-flex align-items-center justify-content-between">
+                <div class="d-flex">
+                    <input type="hidden" asp-for="UserDivisions[i].Id"/>
+                    @if (Model.UserDivisions[i].Division.PreviewImage is not null)
+                    {
+                        string? mimeType = ImageWorker.GetImageMimeType(Model.UserDivisions[i].Division.PreviewImage); // MIME-тип по умолчанию
+
+                        if (mimeType is not null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.UserDivisions[i].Division.PreviewImage)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+
+                        <p class="item-block__title">@Model.UserDivisions[i].Division.Name</p>
+                        <p class="item-block__desc">@Model.UserDivisions[i].Division.Description</p>
+                        <div class="item-block__text">
+                            <label asp-for="UserDivisions[i].DivisionDirector" class="control-label">Глава подразделения</label>
+                            @{
+                                if (Model is null || Model.UserDivisions[i].DivisionDirector)
+                                {
+                                    <input asp-for="UserDivisions[i].DivisionDirector" type="checkbox" class="form-check-inline" checked />
+                                }
+                                else
+                                {
+                                    <input asp-for="UserDivisions[i].DivisionDirector" type="checkbox" class="form-check-inline" />
+                                }
+                            }
+                            <span asp-validation-for="UserDivisions[i].DivisionDirector" class="text-danger"></span>
+                        </div>
+                    </div>
+                 </div>
+                <div data-id="@Model.UserDivisions[i].Id" data-index="@i" class="btn btn-primary login-form__submit my-3  removeUserBtn">Исключить</div>
+             </div>
+        }
+        <div class="d-flex justify-content-between">
+            <a asp-action="AddUser" asp-controller="Events" asp-route-id="@eventId" asp-route-userId="@Model.Id" class="btn btn-primary login-form__submit my-3 w-25">Добавить подразделение</a>
+            <input class="btn btn-primary login-form__submit my-3 w-25" type="submit" value="Сохранить" />
+        </div>
+    </form>
+</div>
+@section Scripts{
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/js/EditUserScript.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,71 @@
+﻿@model IEnumerable<DiplomService.Models.Event>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="intro">
+    <div class="intro__column">
+        <p class="title-text">Текущие события.</p>
+    </div>
+</div>
+<div class="container">
+    
+    <div class="circled-search__block">
+        <input type="text" class="circled-search__input">
+    </div>
+
+    @foreach (var item in Model)
+    {
+        <a asp-action="Details" asp-route-id="@item?.Id"  class="item-block my-3 align-items-center ">
+            @if (item.PriviewImage != null)
+            {
+                string? mimeType = item.MimeType;
+
+                if (mimeType != null)
+                {
+                    <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PriviewImage)" alt="Image" class="item-block__image">
+                }
+            }
+            else
+            {
+                <img src="/Images/camara.png" alt="Image" class="item-block__image">
+            }
+            <div class="item-block__column">
+                <p class="item-block__title name">@item.Name</p>
+                <p class="item-block__text">
+                    Организатор:
+                    @{
+                        string value = "";
+                        item.Organizations.ForEach(x => value += x.Name + ",");
+                        @value
+                        ;
+                    }
+                </p>
+                <p class="item-block__text item-desctiption overflow-hidden endHiden">Описание: @item.Description</p>
+                <p class="item-block__text">Дата проведения: @item.DateOfStart.ToShortDateString()</p>
+                <p class="item-block__text">
+                    Дата окончания:
+                    @{
+                        if (item.DateOfEnd != null)
+                        {
+                            @item.DateOfEnd.Value.ToShortDateString()
+                            ;
+                        }
+                        else
+                        {
+                            @("Не указана")
+                            ;
+                        }
+                    }
+                </p>
+                <p class="item-block__text">Участников: @item.EventMembers</p>
+            </div>
+        </a>
+    }
+</div>
+@section Scripts{
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/searchScript.js"></script>
+    <script src="~/js/searchInputPopUp.js"></script>
+}

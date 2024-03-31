@@ -1,0 +1,46 @@
+﻿@model List<EventApplication>;
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+<div class="intro" style="height:50vh">
+    <div class="intro__column">
+        <p class="title-text">Заполните список участников</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+    <div class="grid-samecolumn w-100 px-4">
+        <p>Событие</p>
+        <p>Количество участников</p>
+        <p>Дата подачи</p>
+        <p>Статус</p>
+    </div>
+    @foreach (var item in Model)
+    {
+        <a asp-action="Details" asp-controller="EventApplication" asp-route-id="@item.Id" class="item-block my-2">
+            <p class="w-25">@item.Event.Name</p>
+            <p class="w-25">@item.ApplicationData.Count</p>
+            <p class="w-25">@item.TimeOfSend</p>
+            <p class="w-25">
+                @if (item.Accepted is not null)
+                {
+                    if (item.Accepted is true)
+                        @("Принята")
+                    else
+                        @("Отклонена")
+                }
+                else
+                {
+                    @("На рассмотрении")
+                }
+            </p>
+        </a>
+    }
+</div>

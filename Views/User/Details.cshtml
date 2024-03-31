@@ -1,0 +1,88 @@
+﻿@model DiplomService.Models.User;
+
+@{
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:50vh">
+    <div class="intro__column">
+        <p class="title-text">@Model.GetFullName()</p>
+    </div>
+</div>
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+    <div class="form-group">
+        <p сlass="form-control"><span class="fw-bold">Фамилия:</span> @Model.SecondName</p>
+    </div>
+    <div class="form-group">
+        <p сlass="form-control"><span class="fw-bold">Имя:</span> @Model.Name</p>
+    </div>
+    <div class="form-group">
+        <p сlass="form-control"><span class="fw-bold">Отчество:</span> @Model.LastName</p>
+    </div>
+    
+    <div class="form-group">
+        <p сlass="form-control"><span class="fw-bold">Почта:</span> @Model.Email</p>
+    </div>
+    <div class="form-group">
+        <p сlass="form-control login-form__input"><span class="fw-bold">Номер телефона:</span> @Model.PhoneNumber</p>
+    </div>
+    @{
+        if (User.IsInRole("Administrator"))
+        {
+            string role = Model.GetType().ToString();
+            string value = "Участник событий";
+            if (role.Contains("Administrator"))
+            {
+                value = "Администратор";
+            }
+            else if (role.Contains("WebUser"))
+            {
+                value = "Пользователь";
+            }
+            else if (role.Contains("OrganizationUser"))
+            {
+                value = "Организатор";
+            }
+            <span class="item-block__text fw-bold d-block">@value</span>
+
+            string action = "BlockUser";
+            if (Model.LockoutEnd>DateTime.Now)
+            {
+                action = "UnlockUser";
+            }
+
+            <form id="banForm" asp-action="@action" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            @{
+            if (Model.LockoutEnd>DateTime.Now)
+            {
+                action = "UnlockUser";
+                <button type="submit" class="login-form__submit d-inline-block">Разблокировать</button>
+            }else{
+                <div>
+                    <button type="button" id="sendButton" class="login-form__submit d-inline-block" >Заблокировать</button>
+                    <select id="timeSelect" name="time" сlass="form-control login-form__select" style="display:none;">
+                        <option value="day">На день</option>
+                        <option value="week">На неделю</option>
+                        <option value="month">На месяц</option>
+                        <option value="forewer">Навсегда</option>
+                    </select>
+                </div>
+            }
+            }
+        </form>
+        }
+    }
+</div>
+
+@section Scripts{
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/banUserClick.js"></script>
+}

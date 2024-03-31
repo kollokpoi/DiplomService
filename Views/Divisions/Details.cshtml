@@ -1,0 +1,73 @@
+﻿@model DiplomService.Models.Division
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">@Model.Name</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex endHiden image-text_block align-items-center mb-3">
+        @if (Model.PreviewImage != null)
+        {
+            string? mimeType = Model.MimeType; 
+
+            if (mimeType != null)
+            {
+                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.PreviewImage)" alt="Image" class="bigMainImage">
+            }
+        }
+        else
+        {
+            <img src="/Images/camara.png" alt="Image" class="bigMainImage">
+        }
+        <div class="ms-5">
+            <p class="item-block__text h5"><span class="fw-bold">Описание: </span>@Model.Description</p>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <p class="item-block__text my-2 h5"><span class="fw-bold">Дата начала:</span> @Model.DateOfStart</p>
+        <p class="item-block__text my-2 h5">
+            <span class="fw-bold">Дата окончания:</span>
+            @{
+                if (Model.DateOfEnd != null)
+                {
+                    @Model.DateOfEnd.Value.ToShortDateString()
+                    ;
+                }
+                else
+                {
+                    @("Не указана")
+                    ;
+                }
+            }
+        </p>
+    </div>
+    <p class="item-block__text my-3 h5"><span class="fw-bold">Принимают участие:</span> @Model.DivisionMembers.Count</p>
+    <a href="/Events/Details/@Model.EventId" class="my-2 item-block py-2 d-flex">
+        @if (Model.Event.PriviewImage != null)
+        {
+            string? mimeType = Model.Event.MimeType; // MIME-тип по умолчанию
+
+            if (mimeType != null)
+            {
+                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Event.PriviewImage)" alt="Image" class="item-block__image">
+            }
+        }
+        else
+        {
+            <img src="/Images/camara.png" alt="Image" class="item-block__image">
+        }
+        <div class="item-block__column">
+            <p class="item-block__title">@Model.Event.Name</p>
+            <p class="item-block__text">
+                @Model.Event.Description
+            </p>
+        </div>
+    </a>
+</div>

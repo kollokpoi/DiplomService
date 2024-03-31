@@ -1,0 +1,67 @@
+﻿@model DiplomService.Models.EventApplication
+
+@{
+    ViewData["Title"] = "Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Заявка на участие</p>
+    </div>
+</div>
+<div class="container">
+    <form method="post" enctype="multipart/form-data">
+        <p class="h4">Комментарий к ответу:</p>
+        <textarea class="login-form__input mb-3 textarea-input" id="commentTextArea" name="comment"></textarea>
+        <div class="d-flex justify-content-end">
+            <button name="action" value="success" type="submit" id="successBtn" class="btn btn-primary px-4 mx-2">Принять</button>
+            <button name="action" value="denied" type="submit" class="btn btn-primary btn-accent px-4 mx-2">Отклонить</button>
+        </div>
+    </form>
+    <p class="control-label h5 my-3"><span class="fw-bold">Отправитель:</span> @Model.ApplicationSender.SecondName @Model.ApplicationSender.Name @Model.ApplicationSender.LastName</p>
+    <p class="control-label h5 my-3"><span class="fw-bold">Почта отправителя:</span> @Model.Email</p>
+    <p class="control-label h5 my-3"><span class="fw-bold">Название учебного заведения:</span> @Model.Institution</p>
+    <p class="h5 mb-4 fw-bold">Список участников:</p>
+    <div id="holder">
+        @{
+            for (int i = 0; i < Model.ApplicationData.Count; i++)
+            {
+                <p class="measureTitle">@Model.ApplicationData[i].SecondName @Model.ApplicationData[i].Name @Model.ApplicationData[i].LastName</p>
+                <div class="itemBlock">
+                    <input type="hidden" asp-for="@Model.ApplicationData[i].Id" id="dataId"/>
+                    <div class="form-group my-2">
+                        <p class="control-label">Курс/класс: @Model.ApplicationData[i].Course</p>
+                    </div>
+                    <div class="form-group my-2">
+                        <p class="control-label">Номер телефона: @Model.ApplicationData[i].PhoneNumber</p>
+                    </div>
+                    <div class="form-group my-2">
+                        <p class="control-label">Электронная почта: @Model.ApplicationData[i].Email</p>
+                    </div>
+                    <div class="form-group my-2">
+                        <p class="control-label">Дата рождения: @Model.ApplicationData[i].Birthday</p>
+                    </div>
+                    @{
+                        if (Model.Event.DivisionsExist)
+                        {
+                            <div class="form-group my-2">
+                                <p class="control-label">Подразделение: @Model.ApplicationData[i].Division.Name</p>
+                            </div>
+                        }
+                    }
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary text-center btn-accent delete-btn w-25">Удалить</button>
+                    </div>
+                    
+                </div>
+            }
+        }
+    </div>
+</div>
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/EventApplication.js"></script>
+    }
+}

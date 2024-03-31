@@ -1,0 +1,94 @@
+﻿@using DiplomService.ViewModels.OrganizationViewModels
+@model OrganizationViewModel
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="intro" style="height:45vh">
+    <div class="intro__column">
+        <p class="title-text">@Model.Organization.Name</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex endHiden image-text_block align-items-center mb-3">
+        @if (Model.Organization.Preview != null)
+        {
+        string? mimeType = Model.Organization.MimeType;
+
+            if (mimeType != null)
+            {
+               <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.Organization.Preview)" alt="Image" class="w-25 bigMainImage">
+            }
+        }
+        else
+        {
+                <img src="/Images/camara.png" alt="Image" class="w-25 bigMainImage">
+        }
+        <div class="ms-5">
+            <p class="h5 fw-bold">Описание:</p>
+            <p>@Model.Organization.Description</p>
+        </div>
+    </div>
+    <p class="item-block__text h5 my-3"><span class="fw-bold">Зарегистрировано пользователей:</span> @Model.Organization.OrganizationUsers.Count</p>
+    <p class="item-block__text fw-bold h5 my-3">Организуемые события:</p>
+    @{
+        foreach (var item in Model.Organization.Events)
+            {
+                <a asp-action="Details" asp-controller="Events" asp-route-id="@item?.Id" class="item-block my-3 align-items-center ">
+                    @if (item.PriviewImage != null)
+                    {
+                        string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                        if (mimeType != null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PriviewImage)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title">@item.Name</p>
+                        <p class="item-block__text">
+                            Организатор:
+                            @{
+                                string value = "";
+                                item.Organizations.ForEach(x => value += x.Name + ",");
+                                @value
+                                ;
+                            }
+                        </p>
+                        <p class="item-block__text item-desctiption overflow-hidden endHiden"> @item.Description</p>
+                        <p class="item-block__text">Дата проведения: @item.DateOfStart.ToShortDateString()</p>
+                        <p class="item-block__text">
+                            Дата окончания:
+                            @{
+                                if (item.DateOfEnd != null)
+                                {
+                                    @item.DateOfEnd.Value.ToShortDateString()
+                                    ;
+                                }
+                                else
+                                {
+                                    @("Не указана")
+                                    ;
+                                }
+                            }
+                        </p>
+                        <p class="item-block__text">Участников: @item.EventMembers</p>
+                    </div>
+                </a>
+            }
+    }
+    @{
+        if (User.IsInRole("Administrator"))
+        {
+            <a asp-action="Delete" asp-route-Id="@Model.Organization.Id" asp-route-returnUrl="/Admin/Organizations" class="btn btn-danger w-25">Удалить</a>
+        }
+    }
+</div>

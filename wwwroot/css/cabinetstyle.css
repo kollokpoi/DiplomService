@@ -1,0 +1,10 @@
+﻿@media only screen and (max-width: 1850px) {
+    .container {
+        max-width: 1024px;
+    }
+}
+@media only screen and (max-width: 1550px) {
+    .container {
+        max-width: 900px;
+    }
+}

@@ -1,0 +1,125 @@
+﻿@using DiplomService.ViewModels.Event
+@model EventViewModel
+
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="intro" style="height:45vh">
+    <div class="intro__column">
+        <p class="title-text">@Model.Name</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="d-flex justify-content-between mb-2">
+        <a asp-action="Index" class="link-arrow left">Все события</a>
+        <a asp-action="Index" asp-controller="News" asp-route-Id="@Model.Id" class="link-arrow right">Новости</a>
+    </div>
+    <div class="d-flex endHiden image-text_block align-items-center mb-4 mt-4">
+        @if (Model.PriviewImage != null)
+        {
+            string? mimeType = Model.MimeType; 
+
+            if (mimeType != null)
+            {
+                <img src="data:@mimeType;base64,@Convert.ToBase64String(Model.PriviewImage)" alt="Image" class="bigMainImage">
+            }
+        }
+        else
+        {
+            <img src="/Images/camara.png" alt="Image" class="bigMainImage">
+        }
+        <div class="ms-5">
+            <p class="item-block__text h5"><span class="fw-bold">Описание: </span>@Model.Description</p>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <p class="item-block__text my-2 h5"><span class="fw-bold">Дата начала:</span> @Model.DateOfStart</p>
+        <p class="item-block__text my-2 h5">
+            <span class="fw-bold">Дата окончания:</span>
+            @{
+                if (Model.DateOfEnd != null)
+                {
+                    @Model.DateOfEnd.Value.ToShortDateString()
+                    ;
+                }
+                else
+                {
+                    @("Не указана")
+                    ;
+                }
+            }
+        </p>
+    </div>
+    @{
+        if (Model.DivisionsExist)
+        {
+            <p class="item-block__text fw-bold h5 mb-3 mt-5">Подразделения:</p>
+            foreach (var item in Model.Divisions)
+            {
+                <a href="/Divisions/Details/@item.Id" class="my-2 item-block py-2 d-flex">
+                    @if (item.PreviewImage != null)
+                    {
+                        string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                        if (mimeType != null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PreviewImage)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title">@item.Name</p>
+                        <p class="item-block__text">
+                            @item.Description
+                        </p>
+                    </div>
+                </a>
+            }
+        }
+    }
+    @if (User.IsInRole("WebUser"))
+    {
+        <div class="d-flex justify-content-center">
+            <a class="btn btn-primary my-3 w-25" asp-action="Create" asp-controller="EventApplications" asp-route-Id="@Model.Id">Подать заявку на участие.</a>
+        </div>
+    }
+    <p class="item-block__text fw-bold h5 mb-3 mt-5">Организаторы:</p>
+    @{
+        foreach (var item in Model.Organizations)
+        {
+            <a asp-action="Details" asp-controller="Organizations" class="item-block my-3" asp-route-Id="@item.Id">
+                @if (item.Preview != null)
+                {
+                    string? mimeType = item.MimeType;
+
+                    if (mimeType != null)
+                    {
+                        <img src="data:@mimeType;base64,@Convert.ToBase64String(item.Preview)" alt="Image" class="item-block__image">
+                    }
+                }
+                else
+                {
+                    <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                }
+                <div class="item-block__column">
+                    <p class="item-block__title">@item.Name</p>
+                    <p class="item-block__text">
+                        @item.Description
+                    </p>
+                </div>
+            </a>
+        }
+    }
+    @if (ViewBag.Editer is not null && ViewBag.Editer is true)
+    {
+        <div class="d-flex w-100 justify-content-center">
+            <a asp-action="Edit" asp-controller="Events" asp-route-id="@Model.Id" class="d-block login-form__submit">Редактировать</a>
+        </div>
+    }
+</div>

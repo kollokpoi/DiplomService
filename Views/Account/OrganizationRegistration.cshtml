@@ -1,0 +1,74 @@
+﻿@using DiplomService.ViewModels.AuthViewModels
+@model OrganizationRegistrationViewModel
+
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
+
+<div class="container">
+    <div class="vertical-center-block">
+        <form asp-action="OrganizationRegistration" method="post" enctype="multipart/form-data" class="login-form">
+            <p class="login-form__big-text">Подайте заявку на регистрацию в системе.</p>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <span class="text-danger">@ViewBag.Error</span>
+            <div class="w-100 my-2">
+                <label asp-for="SecondName" class="control-label text-left"></label>
+                <input asp-for="SecondName" class="login-form__input" placeholder="Отчетсво*" />
+                <span asp-validation-for="SecondName" class="text-danger"></span>
+            </div>
+            <div class="w-100 my-2">
+                <label asp-for="Name" class="control-label text-left"></label>
+                <input asp-for="Name" class="login-form__input" placeholder="Имя*" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="w-100 my-2">
+                <label asp-for="LastName" class="control-label text-left"></label>
+                <input asp-for="LastName" class="login-form__input" placeholder="Фамилия*" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            <div class="w-100 my-2">
+                <label asp-for="OrganizationName" class="control-label text-left"></label>
+                <input asp-for="OrganizationName" class="login-form__input" placeholder="Название*" />
+                <span asp-validation-for="OrganizationName" class="text-danger"></span>
+            </div>
+
+            <div class="w-100 my-2">
+                <label asp-for="OrganizationEmail" class="control-label"></label>
+                <input asp-for="OrganizationEmail" class="login-form__input" placeholder="Почта*" />
+                <span asp-validation-for="OrganizationEmail" class="text-danger"></span>
+            </div>
+
+            <div class="w-100 my-2">
+                <label asp-for="UserEmail" class="control-label"></label>
+                <input asp-for="UserEmail" class="login-form__input" placeholder="Личная почта*" />
+                <span asp-validation-for="UserEmail" class="text-danger"></span>
+            </div>
+
+            <div class="w-100 my-2">
+                <label asp-for="Message" class="control-label"></label>
+                <textarea asp-for="Message" class="login-form__input h-auto" rows="3" placeholder="Комментарий">
+
+                </textarea>
+                <span asp-validation-for="Message" class="text-danger"></span>
+            </div>
+            <p class="text-success">@ViewBag.Message</p>
+            @if (Model!=null && Model.Sended)
+            {
+                <a href="@Url.Action("Index","Home")" class="login-form__submit">Вернуться</a>
+            }
+            else
+            {
+                <input type="submit" value="Отправить заявку" class="login-form__submit" />
+            }
+            
+        </form>
+    </div>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+}

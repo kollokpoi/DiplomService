@@ -1,0 +1,68 @@
+﻿@using DiplomService.ViewModels.News;
+@model NewsListViewModel
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    bool eventNews = Model.EventId is not null;
+}
+<div class="intro">
+    <div class="intro__column">
+        @{
+            if (eventNews)
+            {
+                <p class="title-text">Новости о событии @Model.EventName</p>
+            }
+            else
+            {
+                <p class="title-text">Новости о проводимых событиях и платформе PrograMatch.</p>
+            }
+        }
+    </div>
+</div>
+<div class="container">
+    @{
+        if (eventNews)
+        {
+            <div class="mb-2">
+                <a asp-action="Details" asp-controller="Events" asp-route-Id="@Model.EventId" class="link-arrow left">Назад к событию.</a>
+            </div>
+        }
+    }
+    <div class="circled-search__block">
+        <input type="text" class="circled-search__input">
+    </div>
+    @foreach (var item in Model.News)
+    {
+        <a href="/News/Details/@item.Id" class="item-block my-2">
+            @if (item.Image != null)
+            {
+                string? mimeType = item.MimeType;
+
+                if (mimeType != null)
+                {
+                    <img src="data:@mimeType;base64,@Convert.ToBase64String(item.Image)" alt="Image" class="item-block__image">
+                }
+            }
+            else
+            {
+                <img src="/Images/camara.png" alt="Image" class="item-block__image">
+            }
+            <div class="item-block__column">
+                <p class="item-block__title name">@item.Title</p>
+                <p class="item-block__text">
+                    @item.Description
+                </p>
+                <p class="item-block__text">@item.DateTime.ToShortDateString()</p>
+            </div>
+        </a>
+    }
+</div>
+
+@section Scripts{
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/searchScript.js"></script>
+    <script src="~/js/searchInputPopUp.js"></script>
+}

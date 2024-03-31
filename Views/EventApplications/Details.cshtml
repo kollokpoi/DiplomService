@@ -1,0 +1,37 @@
+﻿@model DiplomService.Models.EventApplication
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">Информация о вашей заявке</p>
+    </div>
+</div>
+<div class="container mt-5">
+    <p class="control-label h5 mb-3">Статус: @ViewBag.Status</p>
+    <p class="control-label h5 mb-3">Название учебного заведения: @Model.Institution</p>
+    <p class="h5 my-3">Список заявок:</p>
+    <div class="grid-samecolumn w-100 px-4">
+        <p>Фио</p>
+        <p>Курс/класс</p>
+        <p>Подразделение</p>
+    </div>
+    @for (int i = 0; i < Model.ApplicationData.Count; i++)
+    {
+        <div class="item-block my-3 grid-samecolumn w-100">
+            <span>@Model.ApplicationData[i].SecondName @Model.ApplicationData[i].Name @Model.ApplicationData[i].LastName</span>
+            <span>@Model.ApplicationData[i].Course</span>
+            @{
+                if (Model.Event.DivisionsExist)
+                {
+                     <div class="form-group my-2">
+                        <span class="control-label">Подразделение: @Model.ApplicationData[i].Division.Name</span>
+                     </div>
+                }
+            }
+        </div>
+    }
+</div>

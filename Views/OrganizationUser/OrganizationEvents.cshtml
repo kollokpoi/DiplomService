@@ -1,0 +1,209 @@
+﻿@model List<Event>;
+@{
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="title-text">События организации</p>
+    </div>
+</div>
+
+<div class="container">
+        <div class="navigation-block">
+            <partial name="_NavPartial" />
+        </div>
+
+        <p class="fw-bold h4 measureTitle">Текущие события</p>
+        <div class="items-section">
+           @foreach (var item in Model.Where(x=>(x.DateOfEnd>=DateTime.Now || x.DateOfEnd is null) && x.ReadyToShow))
+            {
+            <div class="item-block my-3  justify-content-between align-items-center">
+                <a asp-action="Details" asp-controller="Events" asp-route-id="@item.Id" class="d-flex w-75 endHiden">
+                    @if (item.PriviewImage != null)
+                    {
+                        string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                        if (mimeType != null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PriviewImage)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title">@item.Name</p>
+                        <p class="item-block__text">
+                            Организатор:
+                            @{
+                                string value = "";
+                                item.Organizations.ForEach(x => value += x.Name + ",");
+                                @value
+                                ;
+                            }
+                        <p class="item-block__text">Дата проведения: @item.DateOfStart.ToShortDateString()</p>
+                        <p class="item-block__text">
+                            Дата окончания:
+                                @{
+                                    if (item.DateOfEnd != null)
+                                    {
+                                        @item.DateOfEnd.Value.ToShortDateString()
+                                        ;
+                                    }
+                                    else
+                                    {
+                                        @("Не указана")
+                                        ;
+                                    }
+                                }
+                        </p>
+                        <p class="item-block__text">Участников: @item.EventMembers</p>
+                            @if (!item.ReadyToShow)
+                            {
+                            <p class="item-block__text">Не опубликовано</p>
+                            }
+
+                    </div>
+                </a>
+                <div>
+                    <a asp-action="Edit" asp-controller="Events" asp-route-id="@item.Id" class="btn-success d-block login-form__submit">Редактировать</a>
+                    <a asp-action="EventUsers" asp-controller="Events" asp-route-id="@item.Id" class="btn-success d-block login-form__submit">Участники</a>
+                    <a asp-action="Create" asp-controller="News" asp-route-id="@item.Id" class="btn-success d-block login-form__submit">Опубликовать новость</a>
+                    <a asp-action="Delete" asp-controller="Events" asp-route-id="@item.Id" asp-route-returnUrl="/OrganizationUser/OrganizationEvents" class="d-block login-form__submit btn-danger">Удалить</a>
+                </div>
+            </div>
+            }
+            <a href="~/Events/Create" class="btn btn-primary d-block w-25 m-lg-auto text-center">Создать</a>
+        </div>
+
+        <p class="fw-bold h4 measureTitle">Требуют заполнения</p>
+        <div class="items-section">
+            @foreach (var item in Model.Where(x => !x.ReadyToShow))
+        {
+            <div class="item-block my-3  justify-content-between align-items-center">
+                <a asp-action="Details" asp-controller="Events" asp-route-id="@item.Id" class="d-flex w-75 endHiden">
+                    @if (item.PriviewImage != null)
+                    {
+                        string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                        if (mimeType != null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PriviewImage)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title">@item.Name</p>
+                        <p class="item-block__text">
+                            Организатор:
+                            @{
+                                string value = "";
+                                item.Organizations.ForEach(x => value += x.Name + ",");
+                                @value
+                                ;
+                            }
+                        <p class="item-block__text">Дата проведения: @item.DateOfStart.ToShortDateString()</p>
+                        <p class="item-block__text">
+                            Дата окончания:
+                                @{
+                                    if (item.DateOfEnd != null)
+                                    {
+                                        @item.DateOfEnd.Value.ToShortDateString()
+                                        ;
+                                    }
+                                    else
+                                    {
+                                        @("Не указана")
+                                        ;
+                                    }
+                                }
+                        </p>
+                        <p class="item-block__text">Участников: @item.EventMembers</p>
+                            @if (!item.ReadyToShow)
+                            {
+                            <p class="item-block__text">Не опубликовано</p>
+                            }
+
+                    </div>
+                </a>
+                <div>
+                    <a asp-action="Edit" asp-controller="Events" asp-route-id="@item.Id" class="btn-success d-block login-form__submit">Завершить</a>
+                    <a asp-action="Delete" asp-controller="Events" asp-route-id="@item.Id" asp-route-returnUrl="/OrganizationUser/OrganizationEvents" class="d-block login-form__submit btn-danger">Удалить</a>
+                </div>
+            </div>
+        }
+        </div>
+
+        <p class="fw-bold h4 measureTitle">Завершенные события</p>
+        <div class="items-section">
+        @foreach (var item in Model.Where(x => x.DateOfEnd < DateTime.Now))
+        {
+            <div class="item-block my-3  justify-content-between align-items-center">
+                <a asp-action="Details" asp-controller="Events" asp-route-id="@item.Id" class="d-flex endHiden w-75">
+                    @if (item.PriviewImage != null)
+                    {
+                        string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                        if (mimeType != null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PriviewImage)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title">@item.Name</p>
+                        <p class="item-block__text">
+                            Организатор:
+                            @{
+                                string value = "";
+                                item.Organizations.ForEach(x => value += x.Name + ",");
+                                @value
+                                ;
+                            }
+                        <p class="item-block__text">Дата проведения: @item.DateOfStart.ToShortDateString()</p>
+                        <p class="item-block__text">
+                            Дата окончания:
+                                @{
+                                    if (item.DateOfEnd != null)
+                                    {
+                                        @item.DateOfEnd.Value.ToShortDateString()
+                                        ;
+                                    }
+                                    else
+                                    {
+                                        @("Не указана")
+                                        ;
+                                    }
+                                }
+                        </p>
+                        <p class="item-block__text">Участников: @item.EventMembers</p>
+                            @if (!item.ReadyToShow)
+                            {
+                            <p class="item-block__text">Не опубликовано</p>
+                            }
+
+                    </div>
+                </a>
+                <div>
+                    <a asp-action="Edit" asp-controller="Events" asp-route-id="@item.Id" class="btn-success d-block login-form__submit">Редактировать</a>
+                    <a asp-action="Delete" asp-controller="Events" asp-route-id="@item.Id" asp-route-returnUrl="/OrganizationUser/OrganizationEvents" class="d-block login-form__submit btn-danger">Удалить</a>
+                </div>
+            </div>
+        }
+        </div>
+</div>
+
+@section Scripts{
+    <script src="/js/slideItemScript.js"></script>
+}
