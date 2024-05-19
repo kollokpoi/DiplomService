@@ -1,4 +1,5 @@
 ﻿using DiplomService.Models.EventsFolder.Division;
+using DiplomService.Services;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -34,7 +35,9 @@ namespace DiplomService.Models
         [Required]
         [ForeignKey("EventId")]
         [JsonIgnore]
-        public virtual Event? Event { get; set; } = new();
+        public virtual Event Event { get; set; } = new();
         public virtual List<MeasureDivisionsInfo> MeasureDivisionsInfos { get; set; } = new();
+
+        public string? MimeType { get { return ImageWorker.GetImageMimeType(Icon); } }
     }
 }

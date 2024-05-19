@@ -3,7 +3,6 @@
     let dateOfStart = $("input[name='StartDate']").val();
     let dateOfEnd = $("input[name='EndDate']").val();
     let divisionsExists = $("#DivisionExist").val() === 'True';
-    let eventId = $("#EventId").val();
     var eventForm = $("#eventForm");
     var measureForm = $(".measuresForm");
 
@@ -331,7 +330,7 @@
             '<div class="form-group d-flex align-items-center">' +
             '<img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">' +
             '<div>' +
-            '<input id="previewImageButton" accept=".png, .jpg, .jpeg" type="file" placeholder="" name="Divisions[' + index + '].PreviewImageFile">' +
+            '<input id="previewImageButton" accept=".png, .jpg, .jpeg .gif" type="file" placeholder="" name="Divisions[' + index + '].PreviewImageFile">' +
             '</div>' +
             '</div>' +
             '</div>' +

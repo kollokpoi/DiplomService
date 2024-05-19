@@ -1,4 +1,5 @@
-﻿using DiplomService.ViewModels.Email;
+﻿using DiplomService.ViewModels.DeleteItem;
+using DiplomService.ViewModels.Email;
 using System.Net;
 using System.Net.Mail;
 
@@ -21,15 +22,30 @@ namespace DiplomService.Services
         public static void SendApplicationResponse(string messageBody, ApplicationEmailViewModel messageVM)
         {
             var from = new MailAddress(senderEmail, "PrograMatch");
-            var to = new MailAddress(messageVM.UserEmail);
+            var to = new MailAddress(messageVM.EmailToSend);
             var m = new MailMessage(from, to)
             {
-                Subject = "PrograMatch. Ваша заявка была рассмотрена.",
+
+                Subject = messageVM.PhoneNumber is null? "PrograMatch. Ваша заявка была рассмотрена.": "PrograMatch. Вы зарегистрированы в системе.",
                 Body = messageBody,
                 IsBodyHtml = true
             };
             SendMessage(m);
         }
+        public static void SendAdminPassword(string messageBody, UserRegistratedEmailViewModel messageVM)
+        {
+            var from = new MailAddress(senderEmail, "PrograMatch");
+            var to = new MailAddress(messageVM.Email);
+            var m = new MailMessage(from, to)
+            {
+
+                Subject = "PrograMatch. Вы зарегистрированы как администратор.",
+                Body = messageBody,
+                IsBodyHtml = true
+            };
+            SendMessage(m);
+        }
+
         public static void SendUserRegistration(string messageBody, UserRegistratedEmailViewModel messageVM)
         {
             var from = new MailAddress(senderEmail, "PrograMatch");
@@ -49,6 +65,19 @@ namespace DiplomService.Services
             var m = new MailMessage(from, to)
             {
                 Subject = "PrograMatch. Ваша заявка была рассмотрена.",
+                Body = messageBody,
+                IsBodyHtml = true
+            };
+            SendMessage(m);
+        }
+
+        public static void SendRemoveReason(string messageBody, DeleteItemViewModel messageVM)
+        {
+            var from = new MailAddress(senderEmail, "PrograMatch");
+            var to = new MailAddress(messageVM.EmailToSend);
+            var m = new MailMessage(from, to)
+            {
+                Subject = $"PrograMatch. событие. {messageVM.ItemName} удалено с площадки",
                 Body = messageBody,
                 IsBodyHtml = true
             };

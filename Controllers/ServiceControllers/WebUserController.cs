@@ -32,7 +32,7 @@ namespace DiplomService.Controllers.ServiceControllers
 
 
             return View(model);
-        } 
+        }
         public ActionResult About() => View();
     }
 }

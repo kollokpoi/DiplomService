@@ -8,7 +8,7 @@
 
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Заполните данные о мероприятии</p>
+        <p class="intro__title">Заполните данные о мероприятии</p>
     </div>
 </div>
 <div class="container">
@@ -46,7 +46,7 @@
                             }
                         }
                         <div>
-                            <input asp-for="IconImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                            <input asp-for="IconImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg .gif" class="btn" type="file" placeholder="" />
                             <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
                         </div>
                     </div>
@@ -60,7 +60,7 @@
                     </div>
                     <div class="form-group my-2">
                         <label asp-for="Length" class="control-label">Укажите продолжительность*</label>
-                        <input asp-for="Length" type="time" value="00:00" class="login-form__input form-control" />
+                        <input asp-for="Length" type="time" class="login-form__input form-control" />
                         <span asp-validation-for="Length" class="text-danger"></span>
                     </div>
 
@@ -101,7 +101,7 @@
                                 {
                                     <div class="d-flex align-items-center">
                                         <div class="form-group my-2 dateOfMeasureTimeBlock">
-                                            <input type="hidden" asp-for="MeasureDates[i].Id"/>
+                                            <input type="hidden" asp-for="MeasureDates[i].Id" />
                                             <label asp-for="MeasureDates[i].Datetime" class="control-label">Укажите дату и время</label>
                                             <input asp-for="MeasureDates[i].Datetime" max="@max" min="@min" type="datetime-local" class="login-form__input form-control" />
                                             <span asp-validation-for="MeasureDates[i].Datetime" class="text-danger"></span>
@@ -117,7 +117,7 @@
                         </div>
                         @{
                             string addBtnStyle = "display:none";
-                            if (Model.SameForAll && Model.MeasureDates.Count>1)
+                            if (Model.SameForAll && Model.MeasureDates.Count > 1)
                             {
                                 addBtnStyle = "";
                             }
@@ -160,6 +160,11 @@
                                 multiVisible = "";
                                 singleVisible = "display:none";
                             }
+                            <div style="@singleVisible" class="form-group my-2" id="singleDatePick">
+                                <label asp-for="MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
+                                <input asp-for="MeasureDates[0].Datetime" min="@min" max="@max" type="datetime-local" class="login-form__input form-control" />
+                                <span asp-validation-for="MeasureDates[0].Datetime" class="text-danger"></span>
+                            </div>
                             <div style="@multiVisible" id="multiplyDatePick">
                                 <div class="form-group my-2">
                                     <label asp-for="WeekDays" class="control-label">Режим выбора дат</label>
@@ -268,12 +273,12 @@
                                                             <span asp-validation-for="MeasureDates[i].Place" class="text-danger"></span>
                                                         </div>
                                                     </div>
-                                                    
+
                                                 }
                                             }
                                         </div>
                                         @{
-                                            string deleteBtnStyle = Model.MeasureDates.Count>1?"":"display:none;";
+                                            string deleteBtnStyle = Model.MeasureDates.Count > 1 ? "" : "display:none;";
                                         }
                                         <div class="btn btn-primary me-3" id="deleteDateBtn" style="@deleteBtnStyle;">Удалить</div>
                                         <div class="btn btn-primary" id="addDateBtn">Добавить</div>
@@ -281,21 +286,21 @@
                                 }
 
                             </div>
-                            <div style="@singleVisible" class="form-group my-2" id="singleDatePick">
-                                <label asp-for="MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
-                                <input asp-for="MeasureDates[0].Datetime" min="@min" max="@max" type="datetime-local" class="login-form__input form-control" />
-                                <span asp-validation-for="MeasureDates[0].Datetime" class="text-danger"></span>
-                            </div>
+
                         }
                     </div>
                 }
             }
         </div>
-        <input type="submit" value="Сохранить" class="btn btn-primary w-25 mt-3" />
+        <div class="d-flex w-100 justify-content-between mt-3">
+            <input type="button" value="Удалить" onclick="getElementById('deleteFormBtn').click()" class="btn btn-primary w-25" />
+            <input type="submit" value="Сохранить" class="btn btn-primary w-25 " />
+        </div>
+
     </form>
     <form asp-action="Delete">
         <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Удалить" class="btn btn-danger" />
+        <input type="submit" id="deleteFormBtn" class="btn btn-danger d-none" />
     </form>
 </div>
 @section Faq {
@@ -340,7 +345,7 @@
     </div>
 }
 
-@section Scripts{
+@section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
         <script src="~/js/MeasureScript.js" asp-append-version="true"></script>

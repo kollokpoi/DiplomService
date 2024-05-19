@@ -1,0 +1,144 @@
+﻿@using DiplomService.Models.Users
+@using DiplomService.Services
+@model List<DivisionUsers>
+@{
+    ViewData["Title"] = "Участники подразделения";
+    int? divisionId = ViewBag.divisionId;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="intro" style="height:40vh">
+    <div class="intro__column">
+        <p class="intro__title">Участники подразделения</p>
+    </div>
+</div>
+<div class="container">
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    @if (Model is not null)
+    {
+        <p class="fw-bold h4 measureTitle">Участники</p>
+        <div class="items-section">
+            @foreach (var item in Model.Where(x => !x.DivisionDirector))
+            {
+                var user = item.User as MobileUser;
+                if (user is null)
+                    continue;
+                <div class="item-block py-3 justify-content-between my-3">
+                    <div class="d-flex align-content-center">
+                        @if (user.Image != null)
+                        {
+                            string? mimeType = ImageWorker.GetImageMimeType(user.Image); // MIME-тип по умолчанию
+
+                            if (mimeType != null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(user.Image)" alt="Image" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                        }
+                        <div class="item-block__column">
+                            <p class="item-block__title">@user.GetFullName()</p>
+                            <p class="item-block__text">Дата рождения: @user.Birthday.ToShortDateString()</p>
+                            <p class="item-block__text">Курс обучения: @user.Course</p>
+                        </div>
+                    </div>
+                    <form asp-action="DeleteUserFromDivision" method="post">
+                        <input type="hidden" name="Id" value="@item.Id" />
+                        <button type="submit" class="btn btn-primary d-block login-form__submit">Удалить из подразделения</button>
+                    </form>
+                </div>
+            }
+            <div class="w-100 d-flex justify-content-center">
+                <a asp-controller="Divisions" asp-action="AddDivisionMember" asp-route-id="@divisionId" class="btn btn-primary mx-auto text-center">Добавить учаcтника</a>
+            </div>
+        </div>
+        <p class="fw-bold h4 measureTitle">Ответственные пользователи</p>
+        <div class="items-section">
+            @foreach (var item in Model.Where(x => x.DivisionDirector))
+            {
+                <div class="item-block py-3 justify-content-between my-3">
+                    <div class="d-flex align-items-center">
+                        @if (item.User.Image != null)
+                        {
+                            string? mimeType = ImageWorker.GetImageMimeType(item.User.Image); // MIME-тип по умолчанию
+
+                            if (mimeType != null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(item.User.Image)" alt="Image" class="item-block__image">
+                            }
+                        }
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                        }
+                        <div class="item-block__column">
+                            <p class="item-block__title">@item.User.GetFullName()</p>
+                            @if (item.User is OrganizationUsers)
+                            {
+                                <p class="item-block__text">Организация: @((item.User as OrganizationUsers)?.Organization.Name)</p>
+                            }
+                            else if (item.User is WebUser)
+                            {
+                                <p class="item-block__text">Образовательное учреждение: @((item.User as WebUser)?.WorkingPlace)</p>
+                            }
+                        </div>
+                    </div>
+                    
+                    <form asp-action="DeleteUserFromDivision" method="post">
+                        <input type="hidden" name="Id" value="@item.Id" />
+                        <button type="submit" class="btn btn-primary d-block login-form__submit">Удалить из подразделения</button>
+                    </form>
+                </div>
+            }
+            <div class="w-100 d-flex justify-content-center">
+                <a asp-controller="Divisions" asp-action="AddDivisionMember" asp-route-leader="true" asp-route-id="@divisionId" class="btn btn-primary mx-auto text-center">Добавить ответственного</a>
+            </div>
+        </div>
+
+
+    }
+   
+</div>
+
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Описание полей:</p>
+        <p class="fw-bold">"Продолжительность"</p>
+        <p>Укажите, сколько должно длиться мероприятие</p>
+        <p class="fw-bold">"Основное место проведения"</p>
+        <p>Укажите, место, в котором должно проводиться мероприятие</p>
+        <p class="fw-bold">"Частота проведения"</p>
+        <ul>
+            <li>
+                Одноразовое - событие произойдет только один раз, дату и время проведения которого потребуется указать. Например, награждение
+            </li>
+            <li>
+                Повторяющееся - мероприятие будет проводиться несколько раз, для чего потребуется настроить дни повторения.
+                <p class="fw-bold">"Режим выбора дат"</p>
+                <ul>
+                    <li>
+                        Даты - потребуется указать конкретные, даты, в которое будет проводиться мероприятие.
+                    </li>
+                    <li>
+                        Дни недели - выберите дни недели, в которые будет проводиться мероприятие и укажите время.
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/searchScript.js"></script>
+    <script src="~/js/searchInputPopUp.js"></script>
+    <script src="~/js/slideItemScript.js"></script>
+}

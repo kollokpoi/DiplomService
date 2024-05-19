@@ -11,39 +11,22 @@
 <div class="container">
     <div class="vertical-center-block">
         <form asp-action="OrganizationRegistration" method="post" enctype="multipart/form-data" class="login-form">
-            <p class="login-form__big-text">Подайте заявку на регистрацию в системе.</p>
+            <p class="login-form__big-text">Подайте заявку на регистрацию в системе</p>
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <span class="text-danger">@ViewBag.Error</span>
-            <div class="w-100 my-2">
-                <label asp-for="SecondName" class="control-label text-left"></label>
-                <input asp-for="SecondName" class="login-form__input" placeholder="Отчетсво*" />
-                <span asp-validation-for="SecondName" class="text-danger"></span>
-            </div>
-            <div class="w-100 my-2">
-                <label asp-for="Name" class="control-label text-left"></label>
-                <input asp-for="Name" class="login-form__input" placeholder="Имя*" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="w-100 my-2">
-                <label asp-for="LastName" class="control-label text-left"></label>
-                <input asp-for="LastName" class="login-form__input" placeholder="Фамилия*" />
-                <span asp-validation-for="LastName" class="text-danger"></span>
-            </div>
             <div class="w-100 my-2">
                 <label asp-for="OrganizationName" class="control-label text-left"></label>
                 <input asp-for="OrganizationName" class="login-form__input" placeholder="Название*" />
                 <span asp-validation-for="OrganizationName" class="text-danger"></span>
             </div>
-
             <div class="w-100 my-2">
                 <label asp-for="OrganizationEmail" class="control-label"></label>
                 <input asp-for="OrganizationEmail" class="login-form__input" placeholder="Почта*" />
                 <span asp-validation-for="OrganizationEmail" class="text-danger"></span>
             </div>
-
             <div class="w-100 my-2">
                 <label asp-for="UserEmail" class="control-label"></label>
-                <input asp-for="UserEmail" class="login-form__input" placeholder="Личная почта*" />
+                <input asp-for="UserEmail" class="login-form__input" placeholder="Почта*" />
                 <span asp-validation-for="UserEmail" class="text-danger"></span>
             </div>
 

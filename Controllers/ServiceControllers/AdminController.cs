@@ -3,8 +3,9 @@ using DiplomService.Models;
 using DiplomService.Models.OrganizationFolder;
 using DiplomService.Models.Users;
 using DiplomService.Services;
-using DiplomService.ViewModels;
 using DiplomService.ViewModels.Admin;
+using DiplomService.ViewModels.AuthViewModels;
+using DiplomService.ViewModels.DeleteItem;
 using DiplomService.ViewModels.Email;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -52,7 +53,7 @@ namespace DiplomService.Controllers.ServiceControllers
             }
             else
             {
-                model.ClosestEvent = "Отсутсвуют предстоящие события";
+                model.ClosestEvent = "Отсутствуют предстоящие события";
             }
 
             var lastNews = _context.News.OrderBy(n => n.DateTime);
@@ -101,19 +102,85 @@ namespace DiplomService.Controllers.ServiceControllers
 
             return NotFound();
         }
+        public ActionResult AddAdmin()
+        {
+            return View();
+        }
+        [HttpPost]
+        public async Task<ActionResult> AddAdmin(AdministratorRegistrationViewModel registrationViewModel)
+        {
+            if (!ModelState.IsValid)
+                return View(registrationViewModel);
+
+            var user = new Administrator()
+            {
+                Email = registrationViewModel.Email,
+                UserName = registrationViewModel.Email,
+                NormalizedEmail = registrationViewModel.Email.ToUpper(),
+                NormalizedUserName = registrationViewModel.Email.ToUpper(),
+                Name = registrationViewModel.Name,
+                SecondName = registrationViewModel.SecondName,
+                LastName = registrationViewModel.LastName,
+                PhoneNumber = PhoneWorker.NormalizePhone(registrationViewModel.PhoneNumber),
+            };
+
+            if (_context.Users.Any(x => x.PhoneNumber == user.PhoneNumber))
+            {
+                ModelState.AddModelError("", "Пользователь с таким номером телефона уже зарегистрирован");
+                return View(registrationViewModel);
+            }
+
+
+            string password = Guid.NewGuid().ToString().Replace("-", string.Empty)[..5];
+            password += password.ToUpper() + '!' + "aWeA";
+
+            var result = await _userManager.CreateAsync(user, password);
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(user, "Administrator");
+
+                var messageVM = new UserRegistratedEmailViewModel()
+                {
+                    BaseUrl = $"{Request.Scheme}://{Request.Host}" + Url.Action("Login", "Account"),
+                    Email = registrationViewModel.Email,
+                    Password = password,
+            
+                };
+
+                var renderer = HttpContext.RequestServices.GetRequiredService<IRazorViewToStringRenderer>();
+                var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/RegistrateUser", messageVM, HttpContext.RequestServices);
+
+                SmtpService.SendAdminPassword(htmlMessage, messageVM);
+                ViewBag.Sucess = "Пользователь зарегистрирован";
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return View(registrationViewModel);
+        }
+
 
         [HttpPost]
-        public async Task<ActionResult> EditApplication(Guid Id, string responseMessage, string ApplicationApproved)
+        public async Task<ActionResult> EditApplication(Guid Id, string responseMessage, bool applicationApproved)
         {
-            var model = await _context.OrganizationApplications.FirstAsync(x => x.Id == Id);
+            var model = await _context.OrganizationApplications.
+                FirstOrDefaultAsync(x => x.Id == Id);
+
+            if (model is null)
+                return NotFound();
+
             model.ResponseMessage = responseMessage;
 
             if (ModelState.IsValid)
             {
-                var applicationApproved = ApplicationApproved == "true";
-
                 model.ApplicationApproved = applicationApproved;
                 model.Checked = true;
+
                 _context.Update(model);
                 await _context.SaveChangesAsync();
 
@@ -124,7 +191,8 @@ namespace DiplomService.Controllers.ServiceControllers
 
             return View(model);
         }
-        async Task HandleApplication(OrganizationApplication model, bool applicationApproved)
+
+        private async Task HandleApplication(OrganizationApplication model, bool applicationApproved)
         {
             var messageVM = new ApplicationEmailViewModel()
             {
@@ -132,7 +200,7 @@ namespace DiplomService.Controllers.ServiceControllers
                 OrganizationName = model.OrganizationName,
                 DateOfSend = model.DateOfSend,
                 ResponseMessage = model.ResponseMessage,
-                UserEmail = model.UserEmail,
+                EmailToSend = model.UserEmail
             };
 
             if (applicationApproved)
@@ -158,9 +226,6 @@ namespace DiplomService.Controllers.ServiceControllers
                     Email = model.UserEmail,
                     UserName = model.UserEmail,
                     Organization = organization,
-                    Name = model.Name,
-                    SecondName = model.SecondName,
-                    LastName = model.LastName,
                     OrganizationLeader = true
                 };
 
@@ -172,6 +237,149 @@ namespace DiplomService.Controllers.ServiceControllers
             var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/ApplicationResponse", messageVM, HttpContext.RequestServices);
 
             SmtpService.SendApplicationResponse(htmlMessage, messageVM);
+        }
+
+
+        public async Task<ActionResult> DeleteEvent(int id)
+        {
+            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
+            if (@event is null)
+                return NotFound();
+
+            return View(@event);
+        }
+        [HttpPost]
+        public async Task<ActionResult> DeleteEvent(int id, string reason)
+        {
+            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
+            if (@event is null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(@event);
+
+            HandleEventDelete(@event, reason);
+            await RemoveEvent(@event);
+
+            if (!_context.Events.Any(x => x.Id == id))
+            {
+                ViewBag.ErrorMessage = "Произошла ошибка";
+            }
+            else
+            {
+                ViewBag.Message = "Удаление выполнено успешно";
+            }
+
+            return View(@event);
+        }
+
+
+        public async Task<ActionResult> DeleteOrganization(int id)
+        {
+            var @event = await _context.Organizations.FirstOrDefaultAsync(x => x.Id == id);
+            if (@event is null)
+                return NotFound();
+
+            return View(@event);
+        }
+        [HttpPost]
+        public async Task<ActionResult> DeleteOrganization(int id, string reason)
+        {
+            var organization = await _context.Organizations.FirstOrDefaultAsync(x => x.Id == id);
+            if (organization is null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(organization);
+
+            HandleOrganization(organization, reason);
+
+            _context.Organizations.Remove(organization);
+            await _context.SaveChangesAsync();
+
+            if (!_context.Events.Any(x => x.Id == id))
+            {
+                ViewBag.ErrorMessage = "Произошла ошибка";
+            }
+            else
+            {
+                ViewBag.Message = "Удаление выполнено успешно";
+            }
+
+            return View(organization);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteNews(int id)
+        {
+            var news = await _context.News.FirstOrDefaultAsync(x => x.Id == id);
+            if (news is null) return NotFound();
+
+            _context.News.Remove(news);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(News));
+        }
+
+        private async void HandleEventDelete(Event @event, string reason)
+        {
+            string? emailToSend = @event.Organizations.Select(x => x.Email).FirstOrDefault(x => x != string.Empty);
+
+            if (emailToSend is null) return;
+
+            DeleteItemViewModel viewModel = new()
+            {
+                ItemType = DeleteItemViewModel.ItemTypes.Event,
+                Reason = reason,
+                ItemName = @event.Name,
+                EmailToSend = emailToSend,
+            };
+
+            var renderer = HttpContext.RequestServices.GetRequiredService<IRazorViewToStringRenderer>();
+            var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/DeleteItem", viewModel, HttpContext.RequestServices);
+
+            SmtpService.SendRemoveReason(htmlMessage, viewModel);
+        }
+
+        private async void HandleOrganization(Organization organization, string reason)
+        {
+            string? emailToSend = organization.OrganizationUsers.Select(x => x.Email).FirstOrDefault(x => x != string.Empty);
+
+            if (emailToSend is null) return;
+
+            DeleteItemViewModel viewModel = new()
+            {
+                ItemType = DeleteItemViewModel.ItemTypes.Organization,
+                Reason = reason,
+                ItemName = organization.Name,
+                EmailToSend = emailToSend,
+            };
+
+            var renderer = HttpContext.RequestServices.GetRequiredService<IRazorViewToStringRenderer>();
+            var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/DeleteItem", viewModel, HttpContext.RequestServices);
+
+            SmtpService.SendRemoveReason(htmlMessage, viewModel);
+        }
+
+
+        private async Task RemoveEvent(Event @event)
+        {
+            foreach (var item in @event.Measures)
+            {
+                _context.MeasureDivisionsInfos.RemoveRange(item.MeasureDivisionsInfos);
+                await _context.SaveChangesAsync();
+            }
+
+            @event.Measures.Clear();
+            await _context.SaveChangesAsync();
+
+            _context.Events.Remove(@event);
+            await _context.SaveChangesAsync();
+        }
+        private async Task RemoveOrganization(Organization organization)
+        {
+            _context.Organizations.Remove(organization);
+            await _context.SaveChangesAsync();
         }
     }
 }

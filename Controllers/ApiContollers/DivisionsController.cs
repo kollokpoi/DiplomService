@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using DiplomService.Database;
+using DiplomService.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using DiplomService.Database;
-using DiplomService.Models;
-using Microsoft.AspNetCore.Identity;
-using DiplomService.Models.Users;
-using Microsoft.AspNetCore.Authorization;
 
 namespace DiplomService.Controllers.ApiContollers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "MobileUser")]
+    [Authorize]
     public class DivisionsController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -49,22 +43,28 @@ namespace DiplomService.Controllers.ApiContollers
                 .Where(d => d.EventId == eventId)
                 .Where(d => d.DivisionMembers.Any(du => du.UserId == user.Id))
                 .ToListAsync();
+
             return Ok(divisions);
         }
         // GET: api/Divisions/5
         [HttpGet("GetDivision/{id}")]
         public async Task<ActionResult> GetDivision(int id)
         {
+            
+            Console.WriteLine("Запрос получен в: " + DateTime.Now.Hour + ":" + 
+                DateTime.Now.Minute + ":" + DateTime.Now.Second + ":" + DateTime.Now.Millisecond);
             if (_context.Divisions == null)
             {
                 return NotFound();
             }
-            var division = await _context.Divisions.FindAsync(id);
+            var division = await _context.Divisions.FirstOrDefaultAsync(x=>x.Id==id);
 
             if (division == null)
             {
                 return NotFound();
             }
+            Console.WriteLine("Ответ отправлен в: " + DateTime.Now.Hour + ":" + DateTime.Now.Minute + ":" 
+                + DateTime.Now.Second + ":" + DateTime.Now.Millisecond);
             return Ok(division);
         }
     }

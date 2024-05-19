@@ -1,0 +1,69 @@
+﻿@model DiplomService.ViewModels.EventApplication.ApplicationDataViewModel
+
+@{
+    ViewData["Title"] = "Добавление участника";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="intro" style="height:50vh">
+    <div class="intro__column">
+        <p class="intro__title">Добавление участника</p>
+    </div>
+</div>
+<div class="container">
+    <form method="post" enctype="multipart/form-data" id="applicationForm">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="DivisionId"/>
+        <input type="hidden" asp-for="UserId" />
+        <input type="hidden" asp-for="DivisionLeader"/>
+        <div class="form-group my-2 position-relative">
+            <label asp-for="Name" class="control-label">ФИО*</label>
+            <input asp-for="Name" class="login-form__input form-control userSuggestionInput"/>
+            <span asp-validation-for="Name" class="text-danger"></span>
+
+            <div class="suggestionsUserDropdown" style="position: absolute; display: none; z-index:10"></div>
+        </div>
+
+        <div id="additionalInfo">
+            @if (!Model.DivisionLeader)
+            {
+                <div class="form-group my-2">
+                    <label asp-for="Course" class="control-label">Курс или класс*</label>
+                    <input asp-for="Course" class="login-form__input form-control" />
+                    <span asp-validation-for="Course" class="text-danger"></span>
+                </div>
+                <div class="form-group my-2">
+                    <label asp-for="Birthday" class="control-label">Дата рождения*</label>
+                    <input asp-for="Birthday" type="date" class="login-form__input form-control" />
+                    <span asp-validation-for="Birthday" class="text-danger"></span>
+                </div>
+            }
+            <div class="form-group my-2">
+                <label asp-for="WorkingPlace" class="control-label">Учебное заведение*</label>
+                <input asp-for="WorkingPlace" class="login-form__input form-control" />
+                <span asp-validation-for="WorkingPlace" class="text-danger"></span>
+            </div>
+            <div class="form-group my-2">
+                <label asp-for="PhoneNumber" class="control-label">Номер телефона*</label>
+                <input asp-for="PhoneNumber" type="tel" class="login-form__input form-control" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group my-2">
+                <label asp-for="Email" class="control-label">Электронная почта*</label>
+                <input asp-for="Email" type="email" class="login-form__input form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+
+        </div>
+        
+        <div class="d-flex justify-content-between">
+            <input type="submit" value="Отправить" class="btn btn-primary w-25 mt-3" />
+        </div>
+    </form>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/divisionMembersScript.js"></script>
+    }
+}

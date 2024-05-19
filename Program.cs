@@ -1,10 +1,8 @@
 ﻿using DiplomService.Database;
 using DiplomService.Models;
 using DiplomService.Services;
-using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using DiplomService.Controllers.ApiContollers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,14 +10,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<ApplicationContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString).UseLazyLoadingProxies());
 
 builder.Services.AddIdentity<User, IdentityRole>(opts =>
 {
     opts.User.RequireUniqueEmail = true;
+
 }).AddEntityFrameworkStores<ApplicationContext>();
 
-//builder.Services.AddHangfire(opt => opt.UseSqlServerStorage(connectionString));
 builder.Services.AddScoped<IRazorViewToStringRenderer, RazorViewToStringRenderer>();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -33,8 +31,12 @@ using (var scope = app.Services.CreateScope())
 {
     // Получение UserManager<User> из области видимости запроса
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    var optionsBuilder = new DbContextOptionsBuilder<ApplicationContext>();
+    optionsBuilder.UseSqlServer(connectionString)
+                  .UseLazyLoadingProxies();
 
-    var chatServer = new ChatServer(new ApplicationContext(), userManager);
+    var options = optionsBuilder.Options;
+    var chatServer = new ChatServer(new ApplicationContext(options));
     new Thread(new ThreadStart(chatServer.Start)).Start();
 }
 

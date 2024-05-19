@@ -1,5 +1,4 @@
-﻿using DiplomService.Models.Users;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 
 
@@ -11,6 +10,6 @@ namespace DiplomService.Models.ChatsFolder
         public int ChatId { get; set; }
         public virtual Chat Chat { get; set; } = new();
         public string UserId { get; set; } = string.Empty;
-        public virtual MobileUser User { get; set; } = new();
+        public virtual User User { get; set; } = new();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DiplomService.Services.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace DiplomService.ViewModels.AuthViewModels
 {
@@ -22,15 +23,28 @@ namespace DiplomService.ViewModels.AuthViewModels
         [RegularExpression(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}", ErrorMessage = "Некорректный адрес")]
         public string Email { get; set; } = "";
 
+        [Required(ErrorMessage = "Не указано образовательное учреждение")]
+        [Display(Name = "Образовательное учреждение")]
+        public string WorkingPlace { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Не указан пароль")]
         [DataType(DataType.Password)]
         [Display(Name = "Пароль")]
         [MinLength(8, ErrorMessage = "Минимальная длина - 8 символов")]
         public string Password { get; set; } = "";
 
+
+        [Required(ErrorMessage = "Не указан номер телефона")]
+        [Display(Name = "Номер телефона")]
+        [RussianPhoneNumber(ErrorMessage = "Введите действительный номер телефона")]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+
         [DataType(DataType.Password)]
         [Display(Name = "Подтверждение пароля")]
         [Compare("Password", ErrorMessage = "Пароли не совпадают.")]
-        public string? ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+
     }
 }

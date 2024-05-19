@@ -18,9 +18,6 @@ namespace DiplomService.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.2")
-                .HasAnnotation("Proxies:ChangeTracking", false)
-                .HasAnnotation("Proxies:CheckEquality", false)
-                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -41,9 +38,6 @@ namespace DiplomService.Migrations
 
                     b.Property<int>("Course")
                         .HasColumnType("int");
-
-                    b.Property<bool>("DivisionDirector")
-                        .HasColumnType("bit");
 
                     b.Property<int>("DivisionId")
                         .HasColumnType("int");
@@ -68,11 +62,16 @@ namespace DiplomService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
 
                     b.HasIndex("DivisionId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("ApplicationData");
                 });
@@ -423,7 +422,7 @@ namespace DiplomService.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Message");
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("DiplomService.Models.News", b =>
@@ -509,15 +508,7 @@ namespace DiplomService.Migrations
                     b.Property<DateTime>("DateOfSend")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Message")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OrganizationEmail")
@@ -533,14 +524,9 @@ namespace DiplomService.Migrations
                     b.Property<string>("ResponseMessage")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SecondName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("UserEmail")
                         .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -599,7 +585,6 @@ namespace DiplomService.Migrations
                         .HasColumnType("varbinary(max)");
 
                     b.Property<string>("LastName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
@@ -609,7 +594,6 @@ namespace DiplomService.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NormalizedEmail")
@@ -630,7 +614,6 @@ namespace DiplomService.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("SecondName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SecurityStamp")
@@ -843,6 +826,10 @@ namespace DiplomService.Migrations
                     b.Property<int>("Course")
                         .HasColumnType("int");
 
+                    b.Property<string>("WorkingPlace")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.ToTable("MobileUsers");
                 });
 
@@ -865,6 +852,10 @@ namespace DiplomService.Migrations
                 {
                     b.HasBaseType("DiplomService.Models.User");
 
+                    b.Property<string>("WorkingPlace")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.ToTable("WebUsers");
                 });
 
@@ -882,9 +873,15 @@ namespace DiplomService.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("DiplomService.Models.Users.MobileUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Application");
 
                     b.Navigation("Division");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DiplomService.Models.Chat", b =>
@@ -906,7 +903,7 @@ namespace DiplomService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DiplomService.Models.Users.MobileUser", "User")
+                    b.HasOne("DiplomService.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -936,7 +933,7 @@ namespace DiplomService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DiplomService.Models.Users.MobileUser", "User")
+                    b.HasOne("DiplomService.Models.User", "User")
                         .WithMany("UserDivisions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1054,7 +1051,7 @@ namespace DiplomService.Migrations
 
             modelBuilder.Entity("DiplomService.Models.Users.UserDeviceTokens", b =>
                 {
-                    b.HasOne("DiplomService.Models.Users.MobileUser", "User")
+                    b.HasOne("DiplomService.Models.User", "User")
                         .WithMany("DeviceTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1225,7 +1222,7 @@ namespace DiplomService.Migrations
                     b.Navigation("OrganizationUsers");
                 });
 
-            modelBuilder.Entity("DiplomService.Models.Users.MobileUser", b =>
+            modelBuilder.Entity("DiplomService.Models.User", b =>
                 {
                     b.Navigation("DeviceTokens");
 

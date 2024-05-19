@@ -3,6 +3,7 @@
 
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Панель администратора";
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
@@ -10,71 +11,63 @@
 
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Панель администратора.</p>
+        <p class="intro__title">Панель администратора</p>
     </div>
 </div>
 <div class="container">
     <div class="navigation-block">
         <partial name="_NavPartial" />
     </div>
-    <div class="flex-row d-flex my-3">
-        <a asp-action="Applications" class="item-block" style="width:60%; margin-right:1.5rem;">
+    <div class="d-flex flex-wrap justify-content-between">
+        <a asp-action="Applications" class="item-block item-block_big">
             <div class="item-block__column">
                 <p class="item-block__title">Количество заявок на регистрацию:</p>
                 <p class="item-block__text">@Model.ApplicationsCount</p>
             </div>
         </a>
-        <a asp-action="Organizations" class="item-block" style="width:40%;">
+        <a asp-action="Organizations" class="item-block item-block_small">
             <div class="item-block__column">
                 <p class="item-block__title">Зарегистрировано организаций:</p>
                 <p class="item-block__text">@Model.OrganizationsCount</p>
             </div>
         </a>
-    </div>
-
-    <div class="flex-row d-flex my-3">
-        <a asp-action="Events" class="item-block" style="width:40%;">
+        <a asp-action="Events" class="item-block item-block_small">
             <div class="item-block__column">
                 <p class="item-block__title">Всего событий:</p>
                 <p class="item-block__text">@Model.EventsCount</p>
             </div>
         </a>
-        <div class="item-block" style="width:60%; margin-left:1.5rem;">
+        <a asp-action="List" asp-controller="User" class="item-block item-block_big">
+            <div class="item-block__column">
+                <p class="item-block__title">Пользователей веб сервиса:</p>
+                <p class="item-block__text">@Model.UsersCount</p>
+            </div>
+        </a>
+        <div class="item-block item-block_big">
             <div class="item-block__column">
                 <p class="item-block__title">Ближайшее событие:</p>
                 <p class="item-block__text">@Model.ClosestEvent</p>
             </div>
         </div>
-    </div>
-
-    <a asp-action="List" asp-controller="User" class="item-block my-3">
-        <div class="item-block__column">
-            <p class="item-block__title">Пользователей веб сервиса:</p>
-            <p class="item-block__text">@Model.UsersCount</p>
-        </div>
-    </a>
-
-    <div class="flex-row d-flex my-3">
-        <div class="item-block" style="margin-right:1.5rem;">
+        <div class="item-block item-block_small">
             <div class="item-block__column">
                 <p class="item-block__title">Предстоящих событий:</p>
                 <p class="item-block__text">@Model.FutureEventsCount</p>
             </div>
         </div>
-
-        <div class="item-block">
+        <div class="item-block item-block_small">
             <div class="item-block__column">
                 <p class="item-block__title">Последняя новость:</p>
                 <p class="item-block__text">@Model.LastNewsName</p>
             </div>
         </div>
-    </div>
-
-    <div class="item-block my-3">
-        <div class="item-block__column">
-            <p class="item-block__title">Участников событий зарегистрировано:</p>
-            <p class="item-block__text">@Model.EnjoyersCount</p>
+        <div class="item-block item-block_big">
+            <div class="item-block__column">
+                <p class="item-block__title">Участников событий зарегистрировано:</p>
+                <p class="item-block__text">@Model.EnjoyersCount</p>
+            </div>
         </div>
     </div>
+
 </div>
 

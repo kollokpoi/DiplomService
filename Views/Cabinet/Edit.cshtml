@@ -1,7 +1,7 @@
 ﻿@model DiplomService.ViewModels.User.UserViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Личные данные";
     Layout = "_Layout";
 }
 @section Styles {
@@ -10,7 +10,7 @@
 
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Изменение личных данных</p>
+        <p class="intro__title">Изменение личных данных</p>
     </div>
 </div>
 
@@ -44,7 +44,7 @@
                             <img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">
                         }
                         <div>
-                            <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                            <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg .gif" class="btn" type="file" placeholder="" />
                             <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
                         </div>
                     </div>

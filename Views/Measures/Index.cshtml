@@ -15,16 +15,20 @@
 }
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Заполните данные о расписании</p>
+        <p class="intro__title">Заполните данные о расписании</p>
     </div>
 </div>
 <div class="container">
     <div class="navigation-block">
-        <a asp-action="Edit" asp-controller="Events" asp-route-id="@Model.Id" class="cabinet-nav__item">Событие</a>
-        <a href="#" class="cabinet-nav__item">Расписание</a>
+        <a asp-action="Edit" asp-controller ="Events" asp-route-id="@Model.Id" class="cabinet-nav__item">Событие</a>
+        <a asp-action="Index" asp-controller="Measures" asp-route-id="@Model.Id" class="cabinet-nav__item">Расписание</a>
         @if (Model.DivisionsExist)
         {
             <a asp-action="Index" asp-controller="Divisions" asp-route-id="@Model.Id" class="cabinet-nav__item">Подразделения</a>
+        }
+        else
+        {
+            <a asp-action="Members" asp-controller="Divisions" asp-route-id="@Model.Divisions[0].Id" class="cabinet-nav__item">Участники</a>
         }
     </div>
     <p class="display-6">Добавьте расписание</p>
@@ -36,16 +40,31 @@
         {
             @foreach (var item in Model.Measures)
             {
-               <a href="/Measures/Edit/@item.Id" class="my-2 item-block py-2 d-flex justify-content-between">
-                    <p class="control-label name">Название: @item.Name</p>
-                    <p class="control-label">Основное место проведения: @item.Place</p>
-                    <p class="control-label">Продолжительность: @item.Length</p>
-                    @if(Model.DivisionsExist){
-                        string type = item.SameForAll ? "Всеобщее" : "Обычное";
-                        <p class="control-label">Вид мероприятия: @type</p>
+                <a asp-action="Edit" asp-route-id="@item?.Id" class="item-block my-3 align-items-center ">
+                    @if (item.Icon != null)
+                    {
+                        string? mimeType = item.MimeType;
+
+                        if (mimeType != null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.Icon)" alt="Image" class="item-block__image">
+                        }
                     }
-                    
-               </a>
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title name">@item.Name</p>
+                        <p class="item-block__text">Основное место проведения: @item.Place</p>
+                        <p class="item-block__text">Продолжительность: @item.Length</p>
+                        @if (Model.DivisionsExist)
+                        {
+                            string type = item.SameForAll ? "Всеобщее" : "Обычное";
+                            <p class="item-block__text">Вид мероприятия: @type</p>
+                        }
+                    </div>
+                </a>
             }
         }
         else
@@ -53,7 +72,7 @@
             <p class="align-content-center">Настройте расписание проводимого события</p>
         }
         <a href="/Measures/Create/@eventId" class="btn btn-primary w-25 mt-3">
-                Добавить мероприятие
+            Добавить мероприятие
         </a>
 
         <div class="d-flex justify-content-between">
@@ -86,7 +105,7 @@
         </ul>
     </div>
 }
-@section Scripts{
+@section Scripts {
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/searchScript.js"></script>
     <script src="~/js/searchInputPopUp.js"></script>

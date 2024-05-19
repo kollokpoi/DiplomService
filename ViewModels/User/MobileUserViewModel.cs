@@ -2,6 +2,7 @@
 {
     public class MobileUserViewModel
     {
+        public string Id { get; set; } = string.Empty;
         public string? Image { get; set; }
         public string Name { get; set; } = "";
         public string SecondName { get; set; } = "";
@@ -9,6 +10,8 @@
         public int Course { get; set; }
         public DateTime Birthday { get; set; }
         public string PhoneNumber { get; set; } = "";
+        public string Email { get; set; } = string.Empty;
+        public string WorkingPlace { get; set; } = string.Empty;
 
         public void SetImageBytes(byte[] imageBytes)
         {

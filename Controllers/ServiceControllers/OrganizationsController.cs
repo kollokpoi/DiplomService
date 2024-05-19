@@ -42,6 +42,7 @@ namespace DiplomService.Controllers.ServiceControllers
             return View();
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "OrganizationUser")]
@@ -57,41 +58,6 @@ namespace DiplomService.Controllers.ServiceControllers
             return View(organization);
         }
 
-        [Authorize(Roles = "OrganizationUser")]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null || _context.Organizations == null)
-            {
-                return NotFound();
-            }
-
-            var organization = await _context.Organizations.FindAsync(id);
-            if (organization == null)
-            {
-                return NotFound();
-            }
-            OrganizationViewModel organizationViewModel = new()
-            {
-                Organization = organization,
-            };
-            return View(organizationViewModel);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "OrganizationUser")]
-        public async Task<IActionResult> Edit(OrganizationViewModel organizationViewModel)
-        {
-            var organization = organizationViewModel.Organization;
-            if (ModelState.IsValid)
-            {
-                organization.ReadyToShow = true;
-                _context.Update(organization);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(organization);
-        }
 
         [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> Delete(int? id, string? returnUrl)

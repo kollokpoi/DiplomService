@@ -6,22 +6,20 @@
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
 
-<div class="container">
-    <div class="vertical-center-block">
-        <form asp-action="Login" method="post" enctype="multipart/form-data" class="login-form" autocomplete="current-password">
-            <p class="login-form__big-text">Добро пожаловать.</p>
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="vertical-center-block">
+    <form asp-action="Login" method="post" enctype="multipart/form-data" class="login-form" autocomplete="current-password">
+        <p class="login-form__big-text">Добро пожаловать</p>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <input type="text" class="login-form__input my-2" asp-for="Email" placeholder="Почта" />
-            <span asp-validation-for="Email" class="text-danger"></span>
+        <input type="text" class="login-form__input my-2" asp-for="Email" placeholder="Почта" />
+        <span asp-validation-for="Email" class="text-danger"></span>
 
-            <input type="password" class="login-form__input my-2" asp-for="Password" placeholder="Пароль" />
-            <span asp-validation-for="Password" class="text-danger"></span>
+        <input type="password" class="login-form__input my-2" asp-for="Password" placeholder="Пароль" />
+        <span asp-validation-for="Password" class="text-danger"></span>
 
-            <input type="submit" value="Вход" class="login-form__submit" />
+        <input type="submit" value="Вход" class="login-form__submit" />
 
-            <p class="login-form__small-text">Не зарегистрированы? <a href="Registration" style="font-weight:bold;">Регистрация.</a></p>
-            <p class="login-form__small-text">Являетесь организатором? <a href="OrganizationRegistration" style="font-weight:bold;">Регистрация.</a></p>
-        </form>
-    </div>
+        <p class="login-form__small-text">Не зарегистрированы? <a href="Registration" style="font-weight:bold;">Регистрация.</a></p>
+        <p class="login-form__small-text">Являетесь организатором? <a href="OrganizationRegistration" style="font-weight:bold;">Регистрация.</a></p>
+    </form>
 </div>

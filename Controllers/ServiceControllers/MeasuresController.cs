@@ -5,7 +5,6 @@ using DiplomService.ViewModels;
 using DiplomService.ViewModels.Measures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Configuration;
 
 namespace DiplomService.Controllers
 {
@@ -65,8 +64,8 @@ namespace DiplomService.Controllers
             {
                 model.MeasureDays.Add(new()
                 {
-                    Checked=false,
-                    DayNumber= i
+                    Checked = false,
+                    DayNumber = i
                 });
             }
             return View(model);
@@ -203,7 +202,7 @@ namespace DiplomService.Controllers
                 Descrition = Measure.Descrition,
                 Name = Measure.Name,
                 Icon = Measure.Icon,
-                DivisionsExists = Measure.Event.DivisionsExist,
+                DivisionsExists = Measure.Event?.DivisionsExist ?? true,
                 SameForAll = Measure.SameForAll,
                 EventId = Measure.EventId,
                 StartDate = Measure.Event.DateOfStart,
@@ -233,7 +232,7 @@ namespace DiplomService.Controllers
                     model.MeasureDays.Add(modelDay);
                     dayNumbers.Add(item.DayNumber);
                 }
-                
+
                 model.MeasureDays = model.MeasureDays.OrderBy(x => x.DayNumber).ToList();
 
                 foreach (var item in measureDivisionInfo.MeasureDates)

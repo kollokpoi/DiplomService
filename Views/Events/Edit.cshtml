@@ -2,13 +2,13 @@
 @model EventViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = @Model.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="intro" style="height:40vh">
+<div class="intro" style="height:45vh">
     <div class="intro__column">
-        <p class="title-text">Заполните данные об организуемом мероприятии</p>
+        <p class="intro__title">@Model.Name</p>
     </div>
 </div>
 
@@ -19,6 +19,13 @@
         @if (Model.DivisionsExist)
         {
             <a asp-action="Index" asp-controller="Divisions" asp-route-id="@Model.Id" class="cabinet-nav__item">Подразделения</a>
+        }
+        else
+        {
+            @if (Model.Divisions.Count>0)
+            {
+                <a asp-action="Members" asp-controller="Divisions" asp-route-id="@Model.Divisions[0].Id" class="cabinet-nav__item">Участники</a>
+            }
         }
     </div>
 
@@ -45,7 +52,7 @@
                         }
                     }
                     <div>
-                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg .gif" class="btn" type="file" placeholder="" />
                         <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
                     </div>
                 </div>
@@ -91,6 +98,36 @@
                 }
             </select>
             <span asp-validation-for="@Model.DivisionsExist" class="text-danger"></span>
+        </div>
+        <div class="form-group my-2" id="divisionLeadersHolder" style="display:none">
+            <p class="control-label">Ответственные пользователи*</p>
+            <div id="divisionLeadersList">
+                @if (Model is not null)
+                {
+                    @for (int i = 0; i < Model.DivisionLeaders.Count; i++)
+                    {
+                        <div class="my-2 position-relative">
+                            @if (i != 0)
+                            {
+                                <div class="d-flex align-items-center">
+                                    <input asp-for="DivisionLeaders[i].UserName" class="login-form__input form-control my-2 userSuggestionInput" />
+                                    <div class="deleteBtn" data-index="@i">
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <input asp-for="DivisionLeaders[i].UserName" class="login-form__input form-control my-2 userSuggestionInput" />
+                            }
+                            <div class="suggestionsUserDropdown" style="position: absolute; display: none; z-index:10"></div>
+                            <span asp-validation-for="DivisionLeaders[i].UserName" class="text-danger"></span>
+                            <input type="hidden" asp-for="DivisionLeaders[i].Id" class="DivisionLeadersId" />
+                            <span asp-validation-for="DivisionLeaders[i].Id" class="text-danger"></span>
+                        </div>
+                    }
+                }
+            </div>
+            <button type="button" id="divisionLeaderAddBtn" class="btn btn-primary my-3 w-25 mx-auto d-block">Добавить</button>
         </div>
         <div class="form-group my-2 position-relative" id="mapHolder" style="display:none">
             <label asp-for="PlaceName" class="control-label">Основное место проведения*</label>
@@ -144,6 +181,7 @@
 @section Scripts{
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/GetUsersScript.js" asp-append-version="true"></script>
         <script src="~/js/switchDivisionExistence.js"></script>
         <script src="~/js/showImage.js" asp-append-version="true"></script>
         <script src="https://api-maps.yandex.ru/2.1/?apikey=375cc711-8399-4720-be09-5496b07e2890&lang=ru_RU" type="text/javascript"></script>

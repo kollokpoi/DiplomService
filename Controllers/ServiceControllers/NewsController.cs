@@ -4,7 +4,6 @@ using DiplomService.ViewModels.News;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace DiplomService.Controllers
 {
@@ -25,8 +24,7 @@ namespace DiplomService.Controllers
 
             if (id is null)
             {
-                var list = await _context.News.Where(x => x.Event.PublicEvent).OrderByDescending(x=>x.DateTime).ToListAsync();
-                model.News = list;
+                model.News = await _context.News.Where(x => x.Event.PublicEvent).OrderByDescending(x => x.DateTime).ToListAsync();
             }
             else
             {
@@ -37,31 +35,20 @@ namespace DiplomService.Controllers
                     model.EventName = @event.Name;
 
                 model.News = await _context.News.Where(x => x.EventId == id).OrderByDescending(x => x.DateTime).ToListAsync();
-
-
-                if (model == null)
-                    return BadRequest();
-
-                ViewBag.EventId = id;
             }
-            
+
             return View(model);
         }
 
 
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null || _context.News == null)
-            {
-                return NotFound();
-            }
-
             var news = await _context.News
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (news == null)
-            {
                 return NotFound();
-            }
+
             if (await UserAccessed(news.Event))
                 ViewBag.Editer = true;
 
@@ -75,11 +62,11 @@ namespace DiplomService.Controllers
                 return NotFound();
             if (!await UserAccessed(@event))
                 return Unauthorized();
-         
+
             var model = new NewsViewModel()
             {
-                EventId= id,
-                EventName =  @event.Name
+                EventId = id,
+                EventName = @event.Name
             };
 
             return View(model);
@@ -113,7 +100,7 @@ namespace DiplomService.Controllers
                 newNews.Sections = new();
                 foreach (var item in model.Sections)
                 {
-                    if (item.Image is not null || item.Name!=string.Empty || item.Description!=string.Empty)
+                    if (item.Image is not null || item.Name != string.Empty || item.Description != string.Empty)
                     {
                         newNews.Sections.Add(new()
                         {
@@ -128,7 +115,7 @@ namespace DiplomService.Controllers
 
             _context.News.Add(newNews);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index), new { Id = model.EventId});
+            return RedirectToAction(nameof(Index), new { Id = model.EventId });
         }
 
         public async Task<IActionResult> Edit(int id)
@@ -146,7 +133,7 @@ namespace DiplomService.Controllers
                 EventId = id,
                 EventName = news.Event.Name,
                 PriviewImage = news.Image,
-                Description= news.Description,
+                Description = news.Description,
                 Name = news.Title,
             };
 
@@ -157,10 +144,10 @@ namespace DiplomService.Controllers
                 {
                     model.Sections.Add(new()
                     {
-                        Id= item.Id,
+                        Id = item.Id,
                         Name = item.Title,
                         Description = item.Description,
-                        Image= item.Image,
+                        Image = item.Image,
                     });
                 }
             }
@@ -192,7 +179,7 @@ namespace DiplomService.Controllers
 
                 foreach (var item in model.Sections)
                 {
-                    var newsSection = news.Sections.FirstOrDefault(x => x.Id == item.Id && item.Id!=0);
+                    var newsSection = news.Sections.FirstOrDefault(x => x.Id == item.Id && item.Id != 0);
                     if (newsSection is not null)
                     {
                         if (item.ToDelete)
@@ -222,17 +209,16 @@ namespace DiplomService.Controllers
 
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Details), new {Id = model.Id});
+            return RedirectToAction(nameof(Details), new { Id = model.Id });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            if (!ModelState.IsValid)
-                return RedirectToAction(nameof(Details), new { id });
+            var news = await _context.News.FirstOrDefaultAsync(x => 
+                x.Id == id);
 
-            var news = await _context.News.FirstOrDefaultAsync(x=>x.Id==id);
             if (news is null)
                 return BadRequest();
 
@@ -241,9 +227,10 @@ namespace DiplomService.Controllers
 
             _context.News.Remove(news);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index), new { Id = news.EventId });
         }
-        public  IActionResult GetParticipantEntry( int Index)
+        public IActionResult GetParticipantEntry(int Index)
         {
             ViewBag.Index = Index;
             return PartialView("_NewsSectionEntry", Index);

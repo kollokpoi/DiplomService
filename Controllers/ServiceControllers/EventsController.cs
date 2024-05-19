@@ -1,18 +1,14 @@
-﻿using DiplomService.Controllers.ServiceControllers;
-using DiplomService.Database;
+﻿using DiplomService.Database;
 using DiplomService.Models;
+using DiplomService.Models.EventsFolder.Division;
 using DiplomService.Models.Users;
-using DiplomService.Services;
 using DiplomService.ViewModels.Event;
-using DiplomService.ViewModels.EventApplication;
+using DiplomService.ViewModels.Measures;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using System.Linq;
 using System.Security.Claims;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DiplomService.Controllers
 {
@@ -31,9 +27,7 @@ namespace DiplomService.Controllers
 
         public async Task<IActionResult> Index()
         {
-            return _context.Events != null ?
-                        View(await _context.Events.Where(x => x.ReadyToShow).ToListAsync()) :
-                        Problem("Entity set 'ApplicationContext.Events'  is null.");
+            return View(await _context.Events.Where(x => x.ReadyToShow && x.PublicEvent && (x.DateOfEnd == null || x.DateOfEnd > DateTime.Now)).ToListAsync());
         }
         public async Task<IActionResult> Details(int id)
         {
@@ -57,9 +51,18 @@ namespace DiplomService.Controllers
             };
             if (await UserAccessed(@event))
                 ViewBag.Editer = true;
-
+            if (!@event.DivisionsExist)
+            {
+                eventViewModel.MeasuresViewModel = GetEventMeasures(@event);
+            }
             return View(eventViewModel);
         }
+        [Authorize(Roles = "OrganizationUser")]
+        public IActionResult GetUserSuggestTemplate(int index)
+        {
+            return PartialView("UserSuggestTemplate", index);
+        }
+
 
         [Authorize(Roles = "OrganizationUser")]
         public IActionResult Create(int? id)
@@ -68,9 +71,78 @@ namespace DiplomService.Controllers
             {
                 return RedirectToAction(nameof(Edit), new { id = id });
             }
-
             return View();
         }
+        [HttpPost]
+        [Authorize(Roles = "OrganizationUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(EventViewModel EventViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var newEvent = new Event()
+                {
+                    Name = EventViewModel.Name,
+                    Description = EventViewModel.Description,
+                    DateOfStart = EventViewModel.DateOfStart,
+                    DateOfEnd = EventViewModel.DateOfEnd,
+                    PriviewImage = EventViewModel.PriviewImage,
+                    PublicEvent = EventViewModel.PublicEvent,
+                    DivisionsExist = EventViewModel.DivisionsExist,
+                };
+                _context.Events.Add(newEvent);
+
+                var organizationUser = await _userManager.GetUserAsync(User) as OrganizationUsers;
+
+                if (organizationUser != null)
+                {
+                    var organization = organizationUser.Organization;
+
+                    if (organization != null)
+                        newEvent.Organizations.Add(organization);
+                }
+
+                if (!newEvent.DivisionsExist)
+                {
+                    if (EventViewModel.PlaceName == string.Empty || EventViewModel.Latitude is null || EventViewModel.Longitude is null)
+                    {
+                        ModelState.AddModelError("", "Укажите место проведения");
+                        return View(EventViewModel);
+                    }
+                    var division = new Division
+                    {
+                        DateOfStart = EventViewModel.DateOfStart,
+                        Name = "mainDivision",
+                        Event = newEvent,
+                        Longitude = EventViewModel.Longitude.Value,
+                        Latitude = EventViewModel.Latitude.Value,
+                        PlaceName = EventViewModel.PlaceName ?? ""
+                    };
+                    foreach (var item in EventViewModel.DivisionLeaders)
+                    {
+                        var user = await _userManager.FindByIdAsync(item.Id);
+                        if (user is null)
+                            continue;
+
+                        await _userManager.AddToRoleAsync(user, "MobileUser");
+
+                        division.DivisionMembers.Add(new()
+                        {
+                            Division = division,
+                            DivisionDirector = true,
+                            User = user
+                        });
+
+                    }
+                    newEvent.Divisions.Add(division);
+                }
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index", controllerName: "Measures", new { Id = newEvent.Id });
+            }
+            return View(EventViewModel);
+        }
+
 
         [Authorize(Roles = "OrganizationUser")]
         public async Task<IActionResult> Edit(int? id)
@@ -96,7 +168,7 @@ namespace DiplomService.Controllers
                 if (organization != null)
                     if (!@event.Organizations.Contains(organization))
                         return Forbid();
-   
+
             }
             EventViewModel eventViewModel = new()
             {
@@ -117,66 +189,19 @@ namespace DiplomService.Controllers
                 eventViewModel.Latitude = @event.Divisions[0].Latitude;
                 eventViewModel.Longitude = @event.Divisions[0].Longitude;
                 eventViewModel.PlaceName = @event.Divisions[0].PlaceName;
+                var directors = @event.Divisions[0].DivisionMembers.Where(x => x.DivisionDirector);
+                foreach (var item in directors)
+                {
+                    eventViewModel.DivisionLeaders.Add(new()
+                    {
+                        Id = item.UserId,
+                        UserName = item.User.GetFullName()
+                    });
+                }
             }
 
             return View(eventViewModel);
         }
-
-        [HttpPost]
-        [Authorize(Roles = "OrganizationUser")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(EventViewModel EventViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                var newEvent = new Event()
-                {
-                    Name = EventViewModel.Name,
-                    Description = EventViewModel.Description,
-                    DateOfStart = EventViewModel.DateOfStart,
-                    DateOfEnd = EventViewModel.DateOfEnd,
-                    PriviewImage = EventViewModel.PriviewImage,
-                    PublicEvent = EventViewModel.PublicEvent,
-                    DivisionsExist = EventViewModel.DivisionsExist,
-                };
-                _context.Events.Add(newEvent);
-
-                var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var organizationUser = await _context.OrganizationUsers.FirstOrDefaultAsync(x => x.Id == currentUserId);
-
-                if (organizationUser != null)
-                {
-                    var organization = organizationUser.Organization;
-
-                    if (organization != null)
-                        newEvent.Organizations.Add(organization);
-                }
-
-                if (!newEvent.DivisionsExist)
-                {
-                    if (EventViewModel.PlaceName == string.Empty || EventViewModel.Latitude is null || EventViewModel.Longitude is null)
-                    {
-                        ModelState.AddModelError("","Укажите место проведения");
-                        return View(EventViewModel);
-                    }
-
-                    newEvent.Divisions.Add(new Division
-                    {
-                        DateOfStart= EventViewModel.DateOfStart,
-                        Name = "mainDivision",
-                        Event = newEvent,
-                        Longitude = EventViewModel.Longitude.Value,
-                        Latitude = EventViewModel.Latitude.Value,
-                        PlaceName = EventViewModel.PlaceName??""
-                    });
-                }
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction("Index", controllerName: "Measures", new { Id = newEvent.Id });
-            }
-            return View(EventViewModel);
-        }
-
         [HttpPost]
         [Authorize(Roles = "OrganizationUser")]
         [ValidateAntiForgeryToken]
@@ -205,18 +230,17 @@ namespace DiplomService.Controllers
                 if (EventViewModel.PriviewImage != null)
                     @event.PriviewImage = EventViewModel.PriviewImage;
 
-                if (@event.DivisionsExist!=EventViewModel.DivisionsExist)
+                if (@event.DivisionsExist != EventViewModel.DivisionsExist)
                 {
-                    
+
                     foreach (var item in @event.Measures)
                         _context.RemoveRange(item.MeasureDivisionsInfos);
 
                     @event.Measures.Clear();
                     await _context.SaveChangesAsync();
-                    if (@event.EventApplications!=null)
-                    {
+
+                    if (@event.EventApplications != null)
                         @event.EventApplications.Clear();
-                    }
                     await _context.SaveChangesAsync();
 
                     @event.Divisions.Clear();
@@ -232,7 +256,7 @@ namespace DiplomService.Controllers
                             return View(EventViewModel);
                         }
 
-                        @event.Divisions.Add(new Division
+                        var division = new Division
                         {
                             DateOfStart = EventViewModel.DateOfStart,
                             Name = "mainDivision",
@@ -240,9 +264,29 @@ namespace DiplomService.Controllers
                             Longitude = EventViewModel.Longitude.Value,
                             Latitude = EventViewModel.Latitude.Value,
                             PlaceName = EventViewModel.PlaceName ?? ""
-                        });
+                        };
+                        foreach (var item in EventViewModel.DivisionLeaders)
+                        {
+                            var user = await _userManager.FindByIdAsync(item.Id);
+                            if (user is null)
+                                continue;
+
+                            await _userManager.AddToRoleAsync(user, "MobileUser");
+
+                            division.DivisionMembers.Add(new()
+                            {
+                                Division = division,
+                                DivisionDirector = true,
+                                User = user
+                            });
+
+                        }
+                        @event.Divisions.Add(division);
+
                     }
-                }else if (!@event.DivisionsExist){
+                }
+                else if (!@event.DivisionsExist)
+                {
                     if (EventViewModel.PlaceName == string.Empty || EventViewModel.Latitude is null || EventViewModel.Longitude is null)
                     {
                         ModelState.AddModelError("", "Укажите место проведения");
@@ -252,6 +296,41 @@ namespace DiplomService.Controllers
                     @event.Divisions[0].Longitude = EventViewModel.Longitude.Value;
                     @event.Divisions[0].Latitude = EventViewModel.Latitude.Value;
                     @event.Divisions[0].PlaceName = EventViewModel.PlaceName ?? "";
+
+                    var divisionLeadersIds = @event.Divisions[0].DivisionMembers
+                        .Where(x => x.DivisionDirector)
+                        .Select(x => x.UserId);
+
+                    var divisionLeadersToDelete = divisionLeadersIds.Except(EventViewModel.DivisionLeaders.Select(x => x.Id)).ToList();
+                    var divisionLeadersToAdd = EventViewModel.DivisionLeaders.Select(x => x.Id).Except(divisionLeadersIds).ToList();
+
+                    foreach (var userId in divisionLeadersToDelete)
+                    {
+                        var divisionMemder = @event.Divisions[0].DivisionMembers.FirstOrDefault(x => x.UserId == userId);
+                        if (divisionMemder != null)
+                            @event.Divisions[0].DivisionMembers.Remove(divisionMemder);
+                        _context.SaveChanges();
+                    }
+                    foreach (var userId in divisionLeadersToAdd)
+                    {
+                        var user = await _userManager.FindByIdAsync(userId);
+                        if (user is null)
+                            continue;
+
+                        await _userManager.AddToRoleAsync(user, "MobileUser");
+
+                        if (!@event.Divisions[0].DivisionMembers.Any(x => x.User == user))
+                        {
+                            @event.Divisions[0].DivisionMembers.Add(new()
+                            {
+                                Division = @event.Divisions[0],
+                                DivisionDirector = true,
+                                User = user
+                            });
+                        }
+
+                    }
+
                 }
                 var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var organizationUser = await _context.OrganizationUsers.FirstOrDefaultAsync(x => x.Id == currentUserId);
@@ -276,6 +355,56 @@ namespace DiplomService.Controllers
             return View(EventViewModel);
         }
 
+
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> EditUser(string id, int eventId)
+        {
+            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == eventId);
+            if (@event is null)
+                return NotFound();
+
+            if (!await UserAccessed(@event))
+                return BadRequest();
+
+            var user = await _context.MobileUsers.FirstOrDefaultAsync(x => x.Id == id);
+            if (user is null)
+                return NotFound();
+
+            user.UserDivisions = user.UserDivisions.Where(x => x.Division.Event == @event).ToList();
+            ViewBag.eventId = eventId;
+            return View(user);
+        }
+        [HttpPost]
+        [Authorize(Roles = "OrganizationUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(int eventId, MobileUser user)
+        {
+            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == eventId);
+            if (@event is null)
+                return NotFound();
+
+            if (!await UserAccessed(@event))
+                return BadRequest();
+
+            foreach (var item in user.UserDivisions)
+            {
+                var userDivision = await _context.DivisionUsers.FirstOrDefaultAsync(x => x.Id == item.Id);
+                if (userDivision is not null)
+                {
+                    if (userDivision.DivisionDirector != item.DivisionDirector)
+                    {
+                        userDivision.DivisionDirector = item.DivisionDirector;
+                        await _context.SaveChangesAsync();
+                    }
+
+                }
+            }
+
+            return RedirectToAction(nameof(EventUsers), new { id = eventId });
+        }
+
+
+
         [Authorize(Roles = "OrganizationUser")]
         public async Task<IActionResult> Delete(int? id, string? returnUrl)
         {
@@ -299,7 +428,7 @@ namespace DiplomService.Controllers
             if (returnUrl is null)
                 return RedirectToAction(nameof(Index));
             return Redirect(returnUrl);
-        
+
         }
 
         [Authorize(Roles = "OrganizationUser")]
@@ -343,205 +472,21 @@ namespace DiplomService.Controllers
             if (!await UserAccessed(@event))
                 return BadRequest();
 
-            ViewBag.eventId = @event.Id;    
+            ViewBag.eventId = @event.Id;
             if (@event.DivisionsExist)
             {
                 var model = @event.Divisions;
 
-                return View("DivisionsUsers",model);
+                return View("DivisionsUsers", model);
             }
             else
             {
-                var model = @event.Divisions[0].DivisionMembers.Select(x=>x.User);
+                var model = @event.Divisions[0].DivisionMembers.Select(x => x.User);
 
                 return View("NoDivisionsUsers", model);
             }
         }
 
-        [Authorize(Roles = "OrganizationUser")]
-        public async Task<IActionResult> AddUser(int id, [FromQuery] string? userId)
-        {
-            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
-            if (@event is null)
-                return NotFound();
-
-            if (!await UserAccessed(@event))
-                return BadRequest();
-            if (userId is not null)
-            {
-                var user = await _context.MobileUsers.FirstOrDefaultAsync(x => x.Id == userId);
-                if (user is null)
-                    return NotFound();
-
-                var model = new ApplicationDataViewModel()
-                {
-                    EventId = id,
-                    ApplicationDatas = new()
-                    {
-                        Birthday = user.Birthday,
-                        Name = user.Name,
-                        SecondName = user.SecondName,
-                        LastName = user.LastName,
-                        Course = user.Course,
-                        PhoneNumber = user.PhoneNumber?? "",
-                        Email = user.Email ?? ""
-                    },
-                    DivisionsExist = @event.DivisionsExist,
-                    Divisions = @event.Divisions
-                };
-
-                return View(model);
-            }
-            else
-            {
-                var model = new ApplicationDataViewModel()
-                {
-                    EventId = id,
-                    ApplicationDatas = new()
-                    {
-                        Birthday = DateTime.Now.AddYears(-40),
-                    },
-                    DivisionsExist = @event.DivisionsExist,
-                    Divisions = @event.Divisions
-                };
-
-                return View(model);
-            }
-            
-        }
-
-        [Authorize(Roles = "OrganizationUser")]
-        public async Task<IActionResult> EditUser(string id, int eventId)
-        {
-            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == eventId);
-            if (@event is null)
-                return NotFound();
-
-            if (!await UserAccessed(@event))
-                return BadRequest();
-
-            var user = await _context.MobileUsers.FirstOrDefaultAsync(x => x.Id == id);
-            if (user is null)
-                return NotFound();
-
-            user.UserDivisions = user.UserDivisions.Where(x => x.Division.Event == @event).ToList();
-            ViewBag.eventId = eventId;
-            return View(user);
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "OrganizationUser")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditUser(int eventId,MobileUser user)
-        {
-            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == eventId);
-            if (@event is null)
-                return NotFound();
-
-            if (!await UserAccessed(@event))
-                return BadRequest();
-
-            foreach (var item in user.UserDivisions)
-            {
-                var userDivision = await _context.DivisionUsers.FirstOrDefaultAsync(x => x.Id == item.Id);
-                if (userDivision is not null)
-                {
-                    if (userDivision.DivisionDirector!=item.DivisionDirector)
-                    {
-                        userDivision.DivisionDirector = item.DivisionDirector;
-                        await _context.SaveChangesAsync();
-                    }
-                    
-                }
-            }
-
-            return RedirectToAction(nameof(EventUsers), new {id = eventId });
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "OrganizationUser")]
-        public async Task<IActionResult> AddUser(ApplicationDataViewModel model)
-        {
-            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == model.EventId);
-            if (@event is null)
-                return NotFound();
-
-            model.Divisions = @event.Divisions;
-
-            if (!await UserAccessed(@event))
-                return BadRequest();
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            model.ApplicationDatas.PhoneNumber = PhoneWorker.NormalizePhone(model.ApplicationDatas.PhoneNumber);
-
-            var userByEmail = _context.Users.FirstOrDefault(x => x.PhoneNumber == model.ApplicationDatas.PhoneNumber);
-            var userByPhone = _context.Users.FirstOrDefault(x => x.Email == model.ApplicationDatas.Email);
-
-            if ((userByEmail != userByPhone) && (userByEmail != null && userByPhone != null))
-            {
-                ModelState.AddModelError("", "Пользователь с почтовым адресом " + model.ApplicationDatas.Email + " уже зарегистрирован и имеет иной номер телефона");
-                return View(model);
-            }
-
-            if (!@event.DivisionsExist)
-            {
-                model.ApplicationDatas.Division = @event.Divisions[0];
-            }
-
-
-            var user = userByEmail==null? userByPhone as MobileUser : userByEmail as MobileUser;
-
-            if (user == null)
-            {
-                user = new MobileUser()
-                {
-                    UserName = model.ApplicationDatas.PhoneNumber,
-                    SecondName = model.ApplicationDatas.SecondName,
-                    Name = model.ApplicationDatas.Name,
-                    LastName = model.ApplicationDatas.LastName,
-                    PhoneNumber = model.ApplicationDatas.PhoneNumber,
-                    Email = model.ApplicationDatas.Email,
-                    Birthday = model.ApplicationDatas.Birthday,
-                    Course = model.ApplicationDatas.Course,
-                };
-
-                var result = await _userManager.CreateAsync(user);
-                if (result == IdentityResult.Success)
-                {
-                    await _userManager.AddToRoleAsync(user, "MobileUser");
-                }
-
-            }
-
-            if (@event.DivisionsExist)
-            {
-                var division = @event.Divisions.FirstOrDefault(x=>x.Id == model.ApplicationDatas.DivisionId);
-                if ( division is not null && !division.DivisionMembers.Any(x=>x.User == user))
-                {
-                    division.DivisionMembers.Add(new DivisionUsers()
-                    {
-                        User = user,
-                        Division = division,
-                        DivisionDirector = model.ApplicationDatas.DivisionDirector
-                    });
-                }
-            }
-            else
-            {
-                user.UserDivisions.Add(new DivisionUsers()
-                {
-                    Division = @event.Divisions[0],
-                    User = user,
-                    DivisionDirector = model.ApplicationDatas.DivisionDirector
-                });
-            }
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(EventUsers),new { Id = model.EventId});
-        }
 
         [HttpPost]
         [Authorize(Roles = "OrganizationUser")]
@@ -563,6 +508,7 @@ namespace DiplomService.Controllers
 
             return Ok();
         }
+
         private async Task RemoveEvent(Event @event)
         {
             foreach (var item in @event.Measures)
@@ -570,8 +516,6 @@ namespace DiplomService.Controllers
                 _context.MeasureDivisionsInfos.RemoveRange(item.MeasureDivisionsInfos);
                 await _context.SaveChangesAsync();
             }
-
-            
 
             @event.Measures.Clear();
             await _context.SaveChangesAsync();
@@ -590,6 +534,47 @@ namespace DiplomService.Controllers
                 return false;
             }
             return false;
+        }
+
+        private List<EventMeasuresViewModel> GetEventMeasures(Event @event)
+        {
+            List<EventMeasuresViewModel> viewModel = new List<EventMeasuresViewModel>();
+            List<MeasureDivisionsInfo> measuresForDivision = new List<MeasureDivisionsInfo>();
+            for (int i = 0; i < @event.Divisions.Count; i++)
+            {
+                if (i == 0)
+                {
+                    measuresForDivision.AddRange(@event.Measures.Where(x => x.SameForAll)
+                          .SelectMany(x => x.MeasureDivisionsInfos).ToList());
+                }
+                measuresForDivision.AddRange(@event.Divisions[i].MeasureDivisionsInfos);
+            }
+
+            foreach (var measure in measuresForDivision)
+            {
+                var viewModelItem = new EventMeasuresViewModel()
+                {
+                    Id = measure.Id,
+                    EventName = measure.Measure.Name,
+                };
+                if (measure.WeekDays)
+                {
+                    viewModelItem.DateTime = ApiContollers.MeasuresController.GetNearestDate(measure.MeasureDays);
+                }
+                else
+                {
+                    viewModelItem.DateTime = ApiContollers.MeasuresController.GetNearestDate(measure.MeasureDates);
+                }
+                viewModelItem.Icon = measure.Measure.Icon;
+                viewModelItem.Length = measure.Length;
+                if (viewModelItem.DateTime>DateTime.Now)
+                {
+                    viewModel.Add(viewModelItem);
+                }
+            }
+
+            viewModel = viewModel.OrderBy(x => x.DateTime).ToList();
+            return viewModel;
         }
     }
 }

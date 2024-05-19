@@ -1,6 +1,5 @@
 ﻿using DiplomService.Database;
 using DiplomService.Models;
-using DiplomService.Models.Users;
 using DiplomService.ViewModels.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -46,10 +45,6 @@ namespace DiplomService.Controllers.ServiceControllers
         }
         public ActionResult Index()
         {
-            var us = User;
-            var u = User.Identity;
-            var cl = us.Claims.First(x=>x.Type == "AspNet.Identity.SecurityStamp");
-            var r = _userManager.GetUsersForClaimAsync(cl).Result;
             if (User.IsInRole("Administrator"))
             {
                 return RedirectToAction("Dashboard", "Admin");
@@ -87,8 +82,6 @@ namespace DiplomService.Controllers.ServiceControllers
                 return View(model);
             }
         }
-
-        [Authorize]
         public async Task<ActionResult> EditPassword()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -100,13 +93,12 @@ namespace DiplomService.Controllers.ServiceControllers
             {
                 var model = new UpdatePasswordViewModel
                 {
-                    Id= user.Id,
+                    Id = user.Id,
                 };
                 return View(model);
             }
         }
 
-        [Authorize]
         [HttpPost]
         public async Task<ActionResult> EditPassword(UpdatePasswordViewModel model)
         {
@@ -126,10 +118,10 @@ namespace DiplomService.Controllers.ServiceControllers
             }
             else
             {
-                ModelState.AddModelError("","Ошибка обновления пароля");
+                ModelState.AddModelError("", "Ошибка обновления пароля");
                 return View(model);
             }
-                
+
         }
 
 

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace DiplomService.Services.Attributes
 {
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
-    sealed public class RussianPhoneNumberAttribute : ValidationAttribute
+    public sealed class RussianPhoneNumberAttribute : ValidationAttribute
     {
         public override bool IsValid(object? value)
         {

@@ -8,17 +8,25 @@
 }
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Пользователи организации</p>
+        <p class="intro__title">Пользователи организации</p>
     </div>
 </div>
 <div class="container">
     <div class="navigation-block">
         <partial name="_NavPartial" />
     </div>
-    @foreach (var item in Model)
+    @for (int i = 0; i < Model.Count;i++)
     {
-        <a asp-controller="User" asp-action="Details" asp-route-id="@item.Id" class="item-block d-flex flex-row justify-content-between my-3">
-            <span class="item-block__text fw-bold">@item.SecondName @item.Name @item.LastName</span>
+        var item = Model[i];
+        string action = "Details";
+        string controller = "User";
+        if (i==0)
+        {
+            action = "Edit";
+            controller = "Cabinet";
+        }
+        <a asp-controller="@controller" asp-action="@action" asp-route-id="@item.Id" class="item-block d-flex flex-row justify-content-between my-3">
+            <span class="item-block__text fw-bold">@item.GetFullName()</span>
             <div class="d-flex col-4 justify-content-between">
                 @{
                     string value = "Пользователь";

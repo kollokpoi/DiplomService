@@ -1,19 +1,16 @@
-﻿using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using DiplomService.Database;
-using DiplomService.Models.ChatsFolder;
-using Microsoft.AspNetCore.Identity;
+﻿using DiplomService.Database;
 using DiplomService.Models;
-using System.Security.Claims;
+using DiplomService.Models.ChatsFolder;
 using DiplomService.Models.Users;
-using Microsoft.EntityFrameworkCore;
 using DiplomService.ViewModels.Chat;
-using System.Text.Json;
-using System.Net.Http;
 using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
 using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Net.Sockets;
+using System.Text.Json;
 using Message = DiplomService.Models.Message;
 
 namespace DiplomService.Services
@@ -23,10 +20,9 @@ namespace DiplomService.Services
         private TcpListener listener;
         private readonly ApplicationContext _context;
         private List<UserTcp> UserTcps = new List<UserTcp>();
-        public ChatServer(ApplicationContext context, UserManager<User> userManager)
+        public ChatServer(ApplicationContext context)
         {
             _context = context;
-            
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Properties", "google-services.json");
             FirebaseApp.Create(new AppOptions() { Credential = GoogleCredential.FromFile(filePath) });
             listener = new TcpListener(IPAddress.Any, 3333);
@@ -53,19 +49,28 @@ namespace DiplomService.Services
             UserTcp clientTcp = null;
             if (line is not null)
             {
-                var user = await _context.MobileUsers.FirstOrDefaultAsync(x => x.SecurityStamp == line) as MobileUser;
-                if (user is not null)
+                try
                 {
-                    clientTcp = new UserTcp(user, userTcp);
-                    UserTcps.Add(clientTcp);
-                    Console.WriteLine($"Подключен {userTcp.Client.RemoteEndPoint}, {user.GetFullName()}");
-                    
+                    var user = await _context.Users.FirstOrDefaultAsync(x => x.SecurityStamp == line);
+                    if (user is not null)
+                    {
+                        clientTcp = new UserTcp(user, userTcp);
+                        UserTcps.Add(clientTcp);
+                        Console.WriteLine($"Подключен {userTcp.Client.RemoteEndPoint}, {user.GetFullName()}");
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("Ошибочная попытка входа");
+                        return;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Ошибочная попытка входа");
-                    return;
+                    throw;
                 }
+                
+               
             }
             while (client.Connected)
             {
@@ -87,7 +92,7 @@ namespace DiplomService.Services
 
 
 
-                        var chat = await GetChat(messageViewModel,clientTcp.User);
+                        var chat = await GetChat(messageViewModel, clientTcp.User);
                         if (chat is not null)
                         {
                             chat.Messages.Add(new Message()
@@ -101,7 +106,7 @@ namespace DiplomService.Services
 
                             messageViewModel.chatId = chat.Id;
 
-                            var secUser = chat.ChatMembers.FirstOrDefault(x=>x.User!=clientTcp.User);
+                            var secUser = chat.ChatMembers.FirstOrDefault(x => x.User != clientTcp.User);
                             if (secUser is not null)
                             {
                                 PushPopUp(secUser.User, messageViewModel);
@@ -111,7 +116,7 @@ namespace DiplomService.Services
                                     BroadcastMessage(messageViewModel, secUserTcp.ToList());
                                 }
                             }
-            
+
                         }
                     }
                 }
@@ -123,7 +128,7 @@ namespace DiplomService.Services
             UserTcps.Remove(clientTcp);
         }
 
-        async void PushPopUp(MobileUser mobileUser, MessageViewModel message)
+        private async void PushPopUp(User mobileUser, MessageViewModel message)
         {
             string title = "Новое сообщение ";
             var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == message.divisionId);
@@ -142,15 +147,15 @@ namespace DiplomService.Services
                     Title = title,
                     Body = message.message
                 },
-                Data = {}
+                Data = { }
             };
-            
+
             var response = await FirebaseMessaging.DefaultInstance.SendMulticastAsync(pushMesage);
         }
 
         private async void BroadcastMessage(MessageViewModel message, List<UserTcp> toWho)
         {
-            
+
             string jsonString = JsonSerializer.Serialize(message);
             foreach (UserTcp userTcp in toWho)
             {
@@ -160,7 +165,7 @@ namespace DiplomService.Services
             }
 
         }
-        private async Task<Chat?> GetChat(MessageViewModel messageViewModel,MobileUser sendedUser)
+        private async Task<Chat?> GetChat(MessageViewModel messageViewModel, User sendedUser)
         {
             Chat? chat = null;
             if (messageViewModel.chatId is null)

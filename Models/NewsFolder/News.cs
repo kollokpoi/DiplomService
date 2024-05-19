@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DiplomService.Services;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -24,26 +25,6 @@ namespace DiplomService.Models
         public virtual Event Event { get; set; } = new();
 
         [NotMapped]
-        public string? MimeType { get { return GetImageMimeType(); } }
-        private string GetImageMimeType()
-        {
-            if (Image == null) return "application/octet-stream";
-            if (Image.Length < 4)
-            {
-                return "application/octet-stream"; // По умолчанию, если массив слишком короткий для определения
-            }
-
-            if (Image[0] == 0xFF && Image[1] == 0xD8 && Image[2] == 0xFF)
-            {
-                return "image/jpeg";
-            }
-            else if (Image[0] == 0x89 && Image[1] == 0x50 && Image[2] == 0x4E && Image[3] == 0x47)
-            {
-                return "image/png";
-            }
-            // Добавьте другие проверки для других форматов, если это необходимо
-
-            return "application/octet-stream"; // Если формат неизвестен, вернуть по умолчанию
-        }
+        public string? MimeType { get { return ImageWorker.GetImageMimeType(Image); } }
     }
 }

@@ -2,6 +2,8 @@
 
     let id = $('#EventId').val();
     let index = 1;
+    let users = [];
+    let selectedIds = [];
 
     $.validator.addMethod("pattern", function (value, element, params) {
         var pattern = new RegExp(params);
@@ -23,9 +25,8 @@
     $('#addBtn').click(() => {
         var lastBlock = $('#holder').find('.itemBlock:last');
         if ($('#applicationForm').valid()) {
-            var secondName = lastBlock.find('input[name$=".SecondName"]').val();
             var name = lastBlock.find('input[name$=".Name"]').val();
-            $('p.measureTitle:last').text(secondName + ' ' + name);
+            $('p.measureTitle:last').text(name);
             $('.deleteButton:last').remove();
             $.ajax({
                 url: "/EventApplications/GetParticipantEntry?Id=" + id + "&Index=" + index,
@@ -78,4 +79,69 @@
             }
         });
     });
+
+    
+    $(document).on("input", '.userSuggestionInput', function () {
+        let value = $(this).val();
+        var url = "/api/User/ApplicationMemberSuggestion";
+        
+        let parrentDiv = $(this).closest('.position-relative');
+        let suggestionsDropdown = parrentDiv.find('.suggestionsUserDropdown');
+        let itemIndex = parrentDiv.index()
+
+        parrentDiv.next('.additionalData').slideDown()
+        parrentDiv.find('input[name$=".UserId"]').val('')
+        selectedIds = $('input[name$=".UserId"]').val();
+        if (value === "") {
+            suggestionsDropdown.empty();
+            suggestionsDropdown.hide();
+            return;
+        }
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            contentType: "application/json",
+            data: { suggestion: value},
+            success: function (result) {
+                users = result;
+                suggestionsDropdown.empty();
+
+                if (result.length > 0) {
+                    for (let i = 0; i < result.length; i++) {
+                        if (!selectedIds.includes(result[i].id)) {
+                            suggestionsDropdown.append(`<div class="userSuggestion" data-index="${i}">${result[i].secondName + ' ' + result[i].name + ' ' + result[i].lastName + ' Образовательное учреждение:' + result[i].workingPlace}</div>`);
+                        }
+                    }
+                    suggestionsDropdown.show();
+                } else {
+                    suggestionsDropdown.hide();
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                suggestionsDropdown.empty();
+            }
+        });
+    });
+    $(document).on("click", '.userSuggestion', function () {
+        let index = parseInt($(this).data('index'))
+        let parrent = $(this).closest('.position-relative');
+
+        if (selectedIds == "") {
+            selectedIds = []
+        } 
+        selectedIds.push(users[index].id);
+
+        let name = parrent.find('input[name$=".Name"]')
+        let id = parrent.find('input[name$=".UserId"]')
+        id.val(users[index].id);
+        name.val(users[index].secondName + ' ' + users[index].name + ' ' + users[index].lastName);
+
+        parrent.next('.additionalData').slideUp()
+
+        let suggestionsDropdown = $('.suggestionsUserDropdown');
+        suggestionsDropdown.empty();
+        suggestionsDropdown.hide();
+    });
+
 });

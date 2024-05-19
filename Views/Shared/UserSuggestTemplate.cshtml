@@ -1,0 +1,19 @@
+﻿@model int;
+<div class="my-2 position-relative">
+    @if (Model != 0)
+    {
+        <div class="d-flex align-items-center">
+            <input class="login-form__input form-control my-2 userSuggestionInput valid" type="text" id="DivisionLeaders_@(@Model)__UserName" name="DivisionLeaders[@(@Model)].UserName" aria-invalid="false">
+            <div class="deleteBtn" data-index="@Model">
+            </div>
+        </div>
+    }
+    else
+    {
+        <input class="login-form__input form-control my-2 userSuggestionInput valid" type="text" id="DivisionLeaders_@(@Model)__UserName" name="DivisionLeaders[@(@Model)].UserName" aria-invalid="false">
+    }
+
+    <div class="suggestionsUserDropdown" style="position: absolute; z-index: 10; display: none;"></div>
+    <input type="hidden" data-val="true" data-val-required="The Id field is required." id="DivisionLeaders_@(@Model)__Id" name="DivisionLeaders[@(@Model)].Id" class="DivisionLeadersId">
+    <span class="text-danger field-validation-valid" data-valmsg-for="DivisionLeaders[@(@Model)].Id" data-valmsg-replace="true"></span>
+</div>

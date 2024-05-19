@@ -4,7 +4,7 @@
 @using DiplomService.ViewModels.Divisions;
 @using DiplomService.ViewModels.Measures;
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Подразделения";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @{
@@ -16,7 +16,7 @@
 }
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Заполните данные о подразделениях</p>
+        <p class="intro__title">Заполните данные о подразделениях</p>
     </div>
 </div>
 <div class="container">
@@ -32,23 +32,36 @@
         if (Model.Divisions.Count>0)
             foreach (var item in Model.Divisions)
             {
-                <a href="/Divisions/Edit/@item.Id?eventId=@Model.Id" class="my-2 item-block py-2 d-flex justify-content-between align-items-center">
-                    @if (item.PreviewImage != null)
-                    {
-                        string? mimeType = item.MimeType; // MIME-тип по умолчанию
-
-                        if (mimeType != null)
+                <div class="my-3 justify-content-between item-block py-3 d-flex align-items-center">
+                    <a asp-action="Edit" asp-controller="Divisions" asp-route-id="@item.Id" asp-route-eventId="@Model.Id" class="d-flex w-100 endHiden">
+                        @if (item.PreviewImage != null)
                         {
-                            <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PreviewImage)" alt="Image" class="item-block__image">
+                            string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                            if (mimeType != null)
+                            {
+                                <img src="data:@mimeType;base64,@Convert.ToBase64String(item.PreviewImage)" alt="Image" class="item-block__image">
+                            }
                         }
-                    }
-                    else
-                    {
-                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
-                    }
-                    <p class="control-label name">Название: @item.Name</p>
-                    <p class="control-label">Основное место проведения: @item.PlaceName</p>
-                </a>
+                        else
+                        {
+                            <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                        }
+                        <div class="ms-2">
+                            <p class="item-block__title ">@item.Name</p>
+                            <p>Участников: @item.DivisionMembers.Count(x=>!x.DivisionDirector)</p>
+                        </div>
+    
+                    </a>
+                    <div>
+                        <form asp-action="Delete" method="post">
+                            <input type="hidden" name="Id" value="@item.Id" />
+                            <button type="submit" class="d-block login-form__submit w-100">Удалить</button>
+                        </form>
+                        <a asp-action="Members" asp-controller="Divisions" asp-route-id="@item.Id" class="d-block login-form__submit">Участники</a>
+                        <a asp-action="Edit" asp-controller="Divisions" asp-route-id="@item.Id" class="d-block login-form__submit">Редактировать</a>
+                    </div>
+                </div>
             }
         
         else

@@ -1,13 +1,13 @@
 ﻿@model DiplomService.Models.Division
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = @Model.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">@Model.Name</p>
+        <p class="intro__title">@Model.Name</p>
     </div>
 </div>
 
@@ -48,7 +48,7 @@
             }
         </p>
     </div>
-    <p class="item-block__text my-3 h5"><span class="fw-bold">Принимают участие:</span> @Model.DivisionMembers.Count</p>
+    <p class="item-block__text my-3 h5"><span class="fw-bold">Принимают участие:</span> @Model.DivisionMembers.Where(x=>!x.DivisionDirector).Count()</p>
     <a href="/Events/Details/@Model.EventId" class="my-2 item-block py-2 d-flex">
         @if (Model.Event.PriviewImage != null)
         {

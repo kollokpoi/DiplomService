@@ -2,7 +2,7 @@
 @model NewsListViewModel
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = Model.EventName ?? "Новости";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @{
@@ -13,11 +13,11 @@
         @{
             if (eventNews)
             {
-                <p class="title-text">Новости о событии @Model.EventName</p>
+                <p class="intro__title">Новости о событии @Model.EventName</p>
             }
             else
             {
-                <p class="title-text">Новости о проводимых событиях и платформе PrograMatch.</p>
+                <p class="intro__title">Новости</p>
             }
         }
     </div>

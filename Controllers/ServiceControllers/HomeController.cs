@@ -1,5 +1,6 @@
 ﻿using DiplomService.Database;
 using DiplomService.Models;
+using DiplomService.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -9,7 +10,6 @@ namespace DiplomService.Controllers.ServiceControllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationContext _context;
-
         public HomeController(ILogger<HomeController> logger, ApplicationContext context)
         {
             _logger = logger;

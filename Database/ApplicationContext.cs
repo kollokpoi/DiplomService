@@ -7,6 +7,7 @@ using DiplomService.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 
 namespace DiplomService.Database
@@ -32,19 +33,16 @@ namespace DiplomService.Database
         public DbSet<WebUser> WebUsers { get; set; }
         public DbSet<OrganizationUsers> OrganizationUsers { get; set; }
         public DbSet<MeasureDivisionsInfo> MeasureDivisionsInfos { get; set; }
-        public ApplicationContext(){}
+        public ApplicationContext() { }
 
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
         {
-            //Database.EnsureCreated();
+            
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=192.168.1.6;Database=EventDB;User=diplomUser;Password=12332155;Encrypt=false;trusted_connection=false")
-                .UseLazyLoadingProxies();
-
             optionsBuilder
               .UseLoggerFactory(LoggerFactory.Create(builder =>
               {
@@ -90,7 +88,7 @@ namespace DiplomService.Database
                 .HasOne(ad => ad.Division)
                 .WithMany()
                 .HasForeignKey(ad => ad.DivisionId)
-                .OnDelete(DeleteBehavior.NoAction); 
+                .OnDelete(DeleteBehavior.NoAction);
         }
 
     }

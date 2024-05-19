@@ -2,11 +2,10 @@
 using DiplomService.Models;
 using DiplomService.Models.OrganizationFolder;
 using DiplomService.Models.Users;
+using DiplomService.Services;
 using DiplomService.ViewModels.AuthViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace DiplomService.Controllers.ServiceControllers
 {
@@ -40,19 +39,18 @@ namespace DiplomService.Controllers.ServiceControllers
                     var user = await _userManager.FindByEmailAsync(model.Email);
                     if (user != null)
                     {
-   
+
                         if (await _userManager.IsInRoleAsync(user, "OrganizationUser"))
                         {
                             if (user is not OrganizationUsers realUser)
                                 return BadRequest();
 
-                            realUser.OrganizationLeader = true;
                             var organization = realUser.Organization;
                             if (organization != null)
                             {
                                 if (!organization.ReadyToShow)
                                 {
-                                    return RedirectToAction("Edit", "Organizations", new { organization.Id });
+                                    return RedirectToAction("EndRegistration", "OrganizationUser", new { organization.Id });
                                 }
                             }
                         }
@@ -98,7 +96,16 @@ namespace DiplomService.Controllers.ServiceControllers
                     Name = registrationViewModel.Name,
                     SecondName = registrationViewModel.SecondName,
                     LastName = registrationViewModel.LastName,
+                    PhoneNumber = PhoneWorker.NormalizePhone(registrationViewModel.PhoneNumber),
+                    WorkingPlace = registrationViewModel.WorkingPlace,
                 };
+
+                if (_context.Users.Any(x => x.PhoneNumber == user.PhoneNumber))
+                {
+                    ModelState.AddModelError("", "Пользователь с таким номером телефона уже зарегистрирован");
+                    return View(registrationViewModel);
+                }
+                    
 
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
                 if (result.Succeeded)
@@ -127,26 +134,27 @@ namespace DiplomService.Controllers.ServiceControllers
             {
                 var application = new OrganizationApplication()
                 {
-                    Name = model.Name,
-                    SecondName = model.SecondName,
-                    LastName = model.LastName,
                     OrganizationName = model.OrganizationName,
                     OrganizationEmail = model.OrganizationEmail,
                     UserEmail = model.UserEmail,
                     Message = model.Message,
                 };
 
+                if (_context.Organizations.Any(x => x.Email == application.OrganizationEmail))
+                {
+                    ModelState.AddModelError("", "Организация с таким почтовым адресом уже существует");
+                    return View(model);
+                }
                 if (_context.Users.Any(x => x.Email == application.UserEmail))
                 {
-                    ModelState.AddModelError("", "Пользователь с такой почтой уже зарегистрирован");
-
+                    ModelState.AddModelError("", "Данная почта занята другим пользователем");
                     return View(model);
                 }
 
                 await _context.OrganizationApplications.AddAsync(application);
                 await _context.SaveChangesAsync();
 
-                ViewBag.Message = $"Спасибо за оставленную заявку. В скором времени вы получите ответ на {model.UserEmail}.";
+                ViewBag.Message = $"Спасибо за оставленную заявку. В скором времени вы получите ответ на {model.OrganizationEmail}.";
                 model.Sended = true;
 
                 return View(model);

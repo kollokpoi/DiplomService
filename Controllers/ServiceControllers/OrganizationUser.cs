@@ -2,6 +2,7 @@
 using DiplomService.Models;
 using DiplomService.Models.Users;
 using DiplomService.Services;
+using DiplomService.ViewModels.AuthViewModels;
 using DiplomService.ViewModels.Email;
 using DiplomService.ViewModels.OrganizationViewModels;
 using DiplomService.ViewModels.User;
@@ -24,7 +25,6 @@ namespace DiplomService.Controllers.ServiceControllers
             _userManager = userManager;
         }
 
-
         public async Task<IActionResult> Organization()
         {
             var organizationUser = await _userManager.GetUserAsync(User) as OrganizationUsers;
@@ -35,6 +35,7 @@ namespace DiplomService.Controllers.ServiceControllers
                 var model = new OrganizationViewModel()
                 {
                     Organization = organization,
+                    Editable = organizationUser.OrganizationLeader
                 };
                 return View(model);
             }
@@ -64,6 +65,7 @@ namespace DiplomService.Controllers.ServiceControllers
                 var organization = organizationUser.Organization;
 
                 var model = organization.OrganizationUsers;
+                model.OrderBy(x => x == organizationUser);
                 return View(model);
             }
             return View();
@@ -84,6 +86,15 @@ namespace DiplomService.Controllers.ServiceControllers
             }
             return View();
         }
+        public IActionResult EndRegistration(int? id)
+        {
+            if (id == null || _context.Organizations == null)
+            {
+                return NotFound();
+            }
+
+            return View();
+        }
 
         [HttpPost]
         public async Task<IActionResult> AddUser(OrganizationUserViewModel model)
@@ -94,6 +105,11 @@ namespace DiplomService.Controllers.ServiceControllers
                 if (user != null)
                 {
                     ModelState.AddModelError("", "Пользователь с таким почтовым адресом уже зарегистрирован");
+                    return View(model);
+                }
+                if (_context.Users.Any(x => x.PhoneNumber == user.PhoneNumber))
+                {
+                    ModelState.AddModelError("", "Пользователь с таким номером телефона уже зарегистрирован");
                     return View(model);
                 }
 
@@ -131,6 +147,7 @@ namespace DiplomService.Controllers.ServiceControllers
                 }
 
                 await _userManager.AddToRoleAsync(organizationUser, "OrganizationUser");
+                await _userManager.AddToRoleAsync(organizationUser, "MobileUser");
 
                 var messageVm = new UserRegistratedEmailViewModel()
                 {
@@ -147,8 +164,74 @@ namespace DiplomService.Controllers.ServiceControllers
             }
             return View(model);
         }
+        [HttpPost]
+        public async Task<IActionResult> Organization(OrganizationViewModel model)
+        {
+            var organizationUser = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (organizationUser is null)
+                return Unauthorized();
+            var org = await _context.Organizations.FirstOrDefaultAsync(x => x.Id == model.Organization.Id);
+            model.Editable = true;
+            if (ModelState.IsValid && org != null)
+            {
 
-        async Task HandleApplication(UserRegistratedEmailViewModel messageVm)
+                if (!org.OrganizationUsers.Contains(organizationUser) && !organizationUser.OrganizationLeader)
+                {
+                    return Unauthorized();
+                }
+
+                if (model.Organization.Preview is not null)
+                {
+                    org.Preview = model.Organization.Preview;
+                }
+                else
+                {
+                    model.Organization.Preview = org.Preview;
+                }
+
+
+                org.Name = model.Organization.Name;
+                org.Email = model.Organization.Email;
+                org.Description = model.Organization.Description;
+                org.ReadyToShow = true;
+                _context.Update(org);
+                await _context.SaveChangesAsync();
+            }
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EndRegistration(EndRegistrationViewModel organizationViewModel)
+        {
+            var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (user is null)
+                return NotFound();
+
+            var organization = user.Organization;
+            await _userManager.AddToRoleAsync(user, "MobileUser");
+            if (ModelState.IsValid)
+            {
+                organization.ReadyToShow = true;
+                user.PhoneNumber = PhoneWorker.NormalizePhone(organizationViewModel.PhoneNumber);
+                user.Name = organizationViewModel.Name;
+                user.SecondName = organizationViewModel.SecondName;
+                user.LastName = organizationViewModel.LastName;
+                user.Image = organizationViewModel.Image;
+
+                if (_context.Users.Any(x => x.PhoneNumber == user.PhoneNumber))
+                {
+                    ModelState.AddModelError("", "Пользователь с таким номером телефона уже зарегистрирован");
+                    return View(organizationViewModel);
+                }
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Organization", "OrganizationUser");
+            }
+            return View();
+        }
+
+        private async Task HandleApplication(UserRegistratedEmailViewModel messageVm)
         {
             messageVm.BaseUrl = $"{Request.Scheme}://{Request.Host}" + Url.Action("Login", "Account");
 
@@ -156,17 +239,6 @@ namespace DiplomService.Controllers.ServiceControllers
             var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/RegistrateUser", messageVm, HttpContext.RequestServices);
 
             SmtpService.SendUserRegistration(htmlMessage, messageVm);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Organization(OrganizationViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Update(model.Organization);
-                await _context.SaveChangesAsync();
-            }
-            return View(model);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Identity;
 
+<img class="nav-img" src="~/Images/arrow.png"/>
 <nav class="cabinet__nav">
     @{
         if (User.IsInRole("Administrator"))
@@ -7,10 +8,10 @@
             <a href="/Admin/Dashboard" class="cabinet-nav__item">Панель управления</a>
             <a href="/Admin/Applications" class="cabinet-nav__item">Заявки на регистрацию</a>
             <a href="/User/List" class="cabinet-nav__item">Пользователи</a>
+            <a href="/Admin/AddAdmin" class="cabinet-nav__item">Добавление администратора</a>
             <a href="/Admin/Events" class="cabinet-nav__item">События</a>
             <a href="/Admin/News" class="cabinet-nav__item">Новости</a>
             <a href="/Admin/Organizations" class="cabinet-nav__item">Организации</a>
-            <a href="/Dashboard" class="cabinet-nav__item">События на сервере</a>
         }
         else if (User.IsInRole("WebUser"))
         {

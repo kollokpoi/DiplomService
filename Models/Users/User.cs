@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
+﻿using DiplomService.Models.Users;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DiplomService.Models
@@ -10,17 +11,16 @@ namespace DiplomService.Models
     [Table("Users")]
     public class User : IdentityUser
     {
-        [Required]
         public string? Name { get; set; }
 
-        [Required]
         public string? SecondName { get; set; }
 
-        [Required]
         public string? LastName { get; set; }
 
         public byte[]? Image { get; set; }
+        public virtual List<UserDeviceTokens> DeviceTokens { get; set; } = new();
+        public virtual List<DivisionUsers> UserDivisions { get; set; } = new();
 
-        public string GetFullName()=> $"{SecondName} {Name} {LastName}";
+        public string GetFullName() => $"{SecondName} {Name} {LastName}";
     }
 }

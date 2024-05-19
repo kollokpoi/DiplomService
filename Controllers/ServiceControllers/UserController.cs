@@ -1,5 +1,6 @@
 ﻿using DiplomService.Database;
 using DiplomService.Models;
+using DiplomService.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,36 +21,67 @@ namespace DiplomService.Controllers.ServiceControllers
             _signInManager = signInManager;
             _roleManager = roleManager;
         }
-        public IActionResult Index()
-        {
-            return View();
-        }
+
         [Authorize(Roles = "Administrator")]
-        public IActionResult List()
+        public async Task<IActionResult> List()
         {
-            var model = new List<User>();
-            model.AddRange(_context.Administrators.ToList());
-            model.AddRange(_context.OrganizationUsers.ToList());
-            model.AddRange(_context.WebUsers.ToList());
-            model.AddRange(_context.MobileUsers.ToList());
+            var model = _context.Users.ToList();
+            var organizationUser = await _userManager.GetUserAsync(User) as Administrator;
+            if (organizationUser is null)
+                return BadRequest();
+
+            model.Remove(organizationUser);
             return View(model);
         }
-        public IActionResult Details(string Id)
+        [Authorize(Roles = "Administrator, OrganizationUser")]
+        public async Task<IActionResult> Details(string Id)
         {
-            var model = _context.Users.First(x => x.Id == Id);
+            var model = _context.Users.FirstOrDefault(x => x.Id == Id);
             if (model != null)
             {
+                if (User.IsInRole("OrganizationUser"))
+                {
+                    var organizationUser = await _userManager.GetUserAsync(User) as OrganizationUsers;
+                    if (organizationUser is null)
+                        return BadRequest();
+
+                    if (organizationUser == model)
+                        return RedirectToAction("Edit", "Cabinet");
+
+
+                    if (!organizationUser.Organization.OrganizationUsers.Contains(model))
+                        return BadRequest();
+
+                    if (organizationUser.OrganizationLeader)
+                        ViewBag.organizationLeader = true;
+                }
                 return View(model);
             }
             return NotFound();
         }
-        public IActionResult Edit()
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> DeleteUser(string Id)
         {
-            return View();
-        }
-        public IActionResult Delete()
-        {
-            return View();
+            var model = _context.OrganizationUsers.First(x => x.Id == Id);
+            if (model != null)
+            {
+                var organizationUser = await _userManager.GetUserAsync(User) as OrganizationUsers;
+                if (organizationUser is null)
+                    return BadRequest();
+
+                if (!organizationUser.Organization.OrganizationUsers.Contains(model))
+                    return BadRequest();
+
+                if (!organizationUser.OrganizationLeader)
+                    return BadRequest();
+                organizationUser.Organization.OrganizationUsers.Remove(model);
+
+                await _userManager.SetLockoutEndDateAsync(model, DateTimeOffset.MaxValue);
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction("Index", "Cabinet");
+            }
+            return NotFound();
         }
 
         [HttpPost]
@@ -60,15 +92,15 @@ namespace DiplomService.Controllers.ServiceControllers
             DateTimeOffset offset = DateTimeOffset.Now;
             if (time.Contains("day"))
             {
-                offset = DateTimeOffset.Now.AddDays(1);
+                offset = offset.AddDays(1);
             }
             else if (time.Contains("week"))
             {
-                offset = DateTimeOffset.Now.AddDays(7);
+                offset = offset.AddDays(7);
             }
             else if (time.Contains("mounth"))
             {
-                offset = DateTimeOffset.Now.AddDays(31);
+                offset = offset.AddDays(31);
             }
             else if (time.Contains("always"))
             {
@@ -97,5 +129,7 @@ namespace DiplomService.Controllers.ServiceControllers
 
             return View();
         }
+
+
     }
 }

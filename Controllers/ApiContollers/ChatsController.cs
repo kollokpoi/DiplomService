@@ -3,12 +3,9 @@ using DiplomService.Models;
 using DiplomService.Models.Users;
 using DiplomService.ViewModels.Chat;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Versioning;
-using System;
 
 namespace DiplomService.Controllers.ApiContollers
 {
@@ -19,7 +16,7 @@ namespace DiplomService.Controllers.ApiContollers
     {
         private readonly ApplicationContext _context;
         private readonly UserManager<User> _userManager;
-        
+
         public ChatsController(ApplicationContext context, UserManager<User> userManager)
         {
             _context = context;
@@ -30,22 +27,31 @@ namespace DiplomService.Controllers.ApiContollers
         [HttpGet("GetUserChats")]
         public async Task<IActionResult> GetUserChats()
         {
-            var user = await _userManager.GetUserAsync(User) as MobileUser;
+            var user = await _userManager.GetUserAsync(User);
             if (user is null)
                 return Unauthorized();
 
-            List<Chat> chats = _context.Chats.Where(x => x.ChatMembers.Any(x=>x.User==user)).ToList();
+            List<Chat> chats = _context.Chats.Where(x => x.ChatMembers.Any(x => x.User == user)).ToList();
             var viewModel = new List<ChatViewModel>();
             foreach (Chat chat in chats)
             {
                 var modelItem = new ChatViewModel()
                 {
                     Id = chat.Id,
-                    Title = chat.Division.Name,
-                    Image = chat.Division.PreviewImage,
+                    
                     DivisionId = chat.DivisionId
                 };
-                if (chat.Messages.Count>0)
+                if (chat.Division.Event.DivisionsExist)
+                {
+                    modelItem.Title = chat.Division.Name;
+                    modelItem.Image = chat.Division.PreviewImage;
+                }
+                else
+                {
+                    modelItem.Title = chat.Division.Event.Name;
+                    modelItem.Image = chat.Division.Event.PriviewImage;
+                }
+                if (chat.Messages.Count > 0)
                 {
                     modelItem.Messages.Add(new MessageViewModel()
                     {
@@ -64,27 +70,36 @@ namespace DiplomService.Controllers.ApiContollers
         [HttpGet("GetChat/{id}")]
         public async Task<IActionResult> GetChat(int id)
         {
-            var user = await _userManager.GetUserAsync(User) as MobileUser;
+            var user = await _userManager.GetUserAsync(User);
             if (user is null)
                 return Unauthorized();
 
             var chat = await _context.Chats.FirstOrDefaultAsync(x => x.Id == id);
             if (chat is null)
                 return NotFound();
-            var secondUser = chat.ChatMembers.Select(x => x.User).FirstOrDefault(x=>x.Id!=user.Id);
+            var secondUser = chat.ChatMembers.Select(x => x.User).FirstOrDefault(x => x.Id != user.Id);
             if (secondUser is null)
                 return BadRequest();
 
             var viewModel = new ChatViewModel()
             {
                 Id = chat.Id,
-                Title = chat.Division.Name,
-                Image = chat.Division.PreviewImage,
+
                 DivisionId = chat.DivisionId,
                 opponentName = secondUser.GetFullName()
             };
-           
-            foreach (var item in chat.Messages.OrderBy(x=>x.DateOfSend))
+            if (chat.Division.Event.DivisionsExist)
+            {
+                viewModel.Title = chat.Division.Name;
+                viewModel.Image = chat.Division.PreviewImage;
+            }
+            else
+            {
+                viewModel.Title = chat.Division.Event.Name;
+                viewModel.Image = chat.Division.Event.PriviewImage;
+            }
+
+            foreach (var item in chat.Messages.OrderBy(x => x.DateOfSend))
             {
                 viewModel.Messages.Add(new MessageViewModel()
                 {
@@ -100,7 +115,7 @@ namespace DiplomService.Controllers.ApiContollers
         [HttpGet("GetChatByDivision/{divisionId}")]
         public async Task<IActionResult> GetChatByDivision(int divisionId)
         {
-            var user = await _userManager.GetUserAsync(User) as MobileUser;
+            var user = await _userManager.GetUserAsync(User);
             if (user is null)
                 return Unauthorized();
 
@@ -145,12 +160,19 @@ namespace DiplomService.Controllers.ApiContollers
                 var viewModel = new ChatViewModel()
                 {
                     Id = chat.Id,
-                    Title = chat.Division.Name,
-                    Image = chat.Division.PreviewImage,
                     DivisionId = chat.DivisionId,
                     opponentName = secndUser.GetFullName()
                 };
-
+                if (chat.Division.Event.DivisionsExist)
+                {
+                    viewModel.Title = chat.Division.Name;
+                    viewModel.Image = chat.Division.PreviewImage;
+                }
+                else
+                {
+                    viewModel.Title = chat.Division.Event.Name;
+                    viewModel.Image = chat.Division.Event.PriviewImage;
+                }
                 foreach (var item in chat.Messages.OrderBy(x => x.DateOfSend))
                 {
                     viewModel.Messages.Add(new MessageViewModel()

@@ -1,6 +1,7 @@
 ﻿@model List<DiplomService.Models.News>
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Новости";
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
@@ -8,7 +9,7 @@
 
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Новости.</p>
+        <p class="intro__title">Новости</p>
     </div>
 </div>
 <div class="container">
@@ -17,27 +18,36 @@
     </div>
     @foreach (var item in Model)
     {
-        <a asp-action="Details" asp-controller="News" asp-route-id="@item?.Id" class="item-block my-2">
-            @if (item.Image != null)
-            {
-                string? mimeType = item.MimeType; // MIME-тип по умолчанию
-
-                if (mimeType != null)
+        <div class="item-block my-3  justify-content-between align-items-center">
+            <a asp-action="Details" asp-controller="News" asp-route-id="@item?.Id" class="d-flex endHiden multi-column-block">
+                @if (item.Image != null)
                 {
-                    <img src="data:@mimeType;base64,@Convert.ToBase64String(item.Image)" alt="Image" class="item-block__image">
+                    string? mimeType = item.MimeType; // MIME-тип по умолчанию
+
+                    if (mimeType != null)
+                    {
+                        <img src="data:@mimeType;base64,@Convert.ToBase64String(item.Image)" alt="Image" class="item-block__image">
+                    }
                 }
-            }
-            else
-            {
-                <img src="/Images/camara.png" alt="Image" class="item-block__image">
-            }
-            <div class="item-block__column">
-                <p class="item-block__title">@item.Title</p>
-                <p class="item-block__text">
-                    @item.Description
-                </p>
-                <p class="item-block__text">@item.DateTime.ToShortDateString()</p>
+                else
+                {
+                    <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                }
+                <div class="item-block__column">
+                    <p class="item-block__title">@item.Title</p>
+                    <p class="item-block__text">
+                        @item.Description
+                    </p>
+                    <p class="item-block__text">@item.DateTime.ToShortDateString()</p>
+                </div>
+            </a>
+            <div>
+                <form method="post" asp-action="DeleteNews">
+                    <input type="hidden" asp-for="@item.Id"/>
+                    <input type="submit" class="d-block login-form__submit btn-danger" value="Удалить"/>
+                </form>
+                
             </div>
-        </a>
+        </div>
     }
 </div>

@@ -2,7 +2,7 @@
 @model List<EventApplication>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Заявки на участие";
     Layout = "~/Views/Shared/_Layout.cshtml";
         string baseLink = "/EventApplications/";
     bool edit = false; ;
@@ -18,10 +18,13 @@
 }
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Заявки на участие в событии.</p>
+        <p class="intro__title">Заявки на участие в событии.</p>
     </div>
 </div>
 <div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
     <div class="grid-samecolumn w-100 px-4">
         @if (edit)
         {

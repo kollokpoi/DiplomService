@@ -15,23 +15,12 @@ namespace DiplomService.Models.OrganizationFolder
         [EmailAddress]
         public string OrganizationEmail { get; set; } = "";
 
-        [Required]
-        [MaxLength(40)]
-        [EmailAddress]
-        public string UserEmail { get; set; } = "";
+        public string UserEmail { get; set; } = string.Empty;
+
 
         [Required]
         [Display(Name = "Принять заявление")]
         public bool ApplicationApproved { get; set; } = false;
-
-        [Required]
-        public string? Name { get; set; }
-
-        [Required]
-        public string? SecondName { get; set; }
-
-        [Required]
-        public string? LastName { get; set; }
 
         [Required]
         public DateTime DateOfSend { get; set; } = DateTime.Now;

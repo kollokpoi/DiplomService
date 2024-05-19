@@ -5,10 +5,10 @@ namespace DiplomService.Models.ChatsFolder
 {
     public class UserTcp
     {
-        public MobileUser User { get;}
-        public TcpClient Client { get;}
-        public UserTcp(MobileUser webUser, TcpClient client) 
-        { 
+        public User User { get; }
+        public TcpClient Client { get; }
+        public UserTcp(User webUser, TcpClient client)
+        {
             User = webUser;
             Client = client;
         }

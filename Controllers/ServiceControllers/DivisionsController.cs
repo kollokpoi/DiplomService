@@ -1,24 +1,31 @@
 ﻿using DiplomService.Database;
 using DiplomService.Models;
 using DiplomService.Models.EventsFolder.Division;
+using DiplomService.Models.Users;
+using DiplomService.Services;
 using DiplomService.ViewModels;
 using DiplomService.ViewModels.Divisions;
+using DiplomService.ViewModels.Email;
+using DiplomService.ViewModels.EventApplication;
 using DiplomService.ViewModels.Measures;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DiplomService.Controllers
 {
+
     public class DivisionsController : Controller
     {
         private readonly ApplicationContext _context;
-
-        public DivisionsController(ApplicationContext context)
+        private readonly UserManager<User> _userManager;
+        public DivisionsController(ApplicationContext context, UserManager<User> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // GET: Divisions
         public async Task<IActionResult> Index(int id)
         {
             var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
@@ -27,8 +34,7 @@ namespace DiplomService.Controllers
 
             return View(@event);
         }
-
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
             var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
             if (division == null)
@@ -36,6 +42,195 @@ namespace DiplomService.Controllers
             return View(division);
         }
 
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> Members(int id)
+        {
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
+            if (division is null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (user is null)
+                return BadRequest();
+
+            if (!division.Event.Organizations.Contains(user.Organization))
+                return Unauthorized();
+
+            var model = division.DivisionMembers.ToList();
+            ViewBag.divisionId = id;
+            return View(model);
+        }
+
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> AddDivisionMember(int id, bool leader = false)
+        {
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
+            if (division is null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (user is null)
+                return BadRequest();
+
+            if (!division.Event.Organizations.Contains(user.Organization))
+                return Unauthorized();
+            var model = new ApplicationDataViewModel() { DivisionId = division.Id, DivisionLeader = leader };
+            return View(model);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> AddDivisionMember(ApplicationDataViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == model.DivisionId);
+            if (division is null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (user is null)
+                return BadRequest();
+
+            if (!division.Event.Organizations.Contains(user.Organization))
+                return Unauthorized();
+
+            if (model.UserId is not null)
+            {
+                var divisionUser = await _userManager.FindByIdAsync(model.UserId);
+                if (divisionUser is not null)
+                {
+                    if (!division.DivisionMembers.Any(x => x.User == divisionUser))
+                    {
+                        _context.DivisionUsers.Add(new()
+                        {
+                            Division = division,
+                            User = divisionUser,
+                            DivisionDirector = model.DivisionLeader
+                        });
+                        await _context.SaveChangesAsync();
+                    }
+
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            else
+            {
+                if (model.Name.Split().Length != 3)
+                    ModelState.AddModelError("", "Укажите полное фио");
+                if (model.PhoneNumber is null)
+                    ModelState.AddModelError("", "Укажите номер телефона");
+                if (model.Email is null)
+                    ModelState.AddModelError("", "Укажите почтовый адрес");
+                if (model.WorkingPlace is null)
+                    ModelState.AddModelError("", "Укажите учебное заведение");
+                if (_context.Users.Any(x => x.PhoneNumber == model.PhoneNumber))
+                    ModelState.AddModelError("", "Пользователь с таким номером телефона уже зарегистрирован");
+
+                if (!ModelState.IsValid || model.PhoneNumber is null || model.Email is null || model.Name.Split().Length != 3 || model.WorkingPlace is null)
+                    return View(model);
+
+                var nameParts = model.Name.Split();
+                Models.User mobileUser;
+                if (!model.DivisionLeader)
+                {
+                    if (model.Course is null)
+                        ModelState.AddModelError("", "Укажите класс/курс");
+                    if (model.Birthday is null)
+                        ModelState.AddModelError("", "Укажите дату рождения");
+                    if (!ModelState.IsValid || model.Birthday is null || model.Course is null)
+                        return View(model);
+
+                    mobileUser = new MobileUser()
+                    {
+                        Birthday = model.Birthday.Value,
+                        Course = model.Course.Value,
+                        Email = model.Email,
+                        SecondName = nameParts[0],
+                        Name = nameParts[1],
+                        LastName = nameParts[2],
+                        PhoneNumber = PhoneWorker.NormalizePhone(model.PhoneNumber),
+                        UserName = PhoneWorker.NormalizePhone(model.PhoneNumber),
+                        NormalizedUserName = PhoneWorker.NormalizePhone(model.PhoneNumber),
+                        WorkingPlace = model.WorkingPlace,
+                    };
+                }
+                else
+                {
+
+                    mobileUser = new WebUser()
+                    {
+                        Email = model.Email,
+                        SecondName = nameParts[0],
+                        Name = nameParts[1],
+                        LastName = nameParts[2],
+                        PhoneNumber = PhoneWorker.NormalizePhone(model.PhoneNumber),
+                        UserName = model.Email,
+                        NormalizedUserName = model.Email.ToUpper(),
+                        WorkingPlace = model.WorkingPlace,
+                    };
+                }
+
+
+                var createResult = await _userManager.CreateAsync(mobileUser);
+                if (createResult.Succeeded)
+                {
+                    _context.DivisionUsers.Add(new()
+                    {
+                        Division = division,
+                        User = mobileUser,
+                        DivisionDirector = model.DivisionLeader
+                    });
+                    _context.SaveChanges();
+                    if (model.DivisionLeader)
+                    {
+                        string password = Guid.NewGuid().ToString().Replace("-", string.Empty)[..5];
+                        password += password.ToUpper() + '!' + "aWeA";
+
+                        await _userManager.AddToRoleAsync(mobileUser, "WebUser");
+                        await _userManager.AddPasswordAsync(mobileUser, password);
+
+
+                        var messageVM = new ApplicationEmailViewModel()
+                        {
+                            OrganizationName = user.Organization.Name,
+                            DateOfSend = DateTime.Now,
+                            EmailToSend = mobileUser.Email,
+                            Password = password,
+                            PhoneNumber = mobileUser.PhoneNumber,
+                            BaseUrl = $"{Request.Scheme}://{Request.Host}" + Url.Action("Login", "Account")
+                        };
+
+                        var renderer = HttpContext.RequestServices.GetRequiredService<IRazorViewToStringRenderer>();
+                        var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/DivisionLeaderRegistration", messageVM, HttpContext.RequestServices);
+                        SmtpService.SendApplicationResponse(htmlMessage, messageVM);
+                    }
+                    else
+                    {
+                        await _userManager.AddToRoleAsync(mobileUser, "MobileUser");
+                    }
+                }
+                else
+                {
+                    foreach (var item in createResult.Errors.Select(x => x.Description.ToString()))
+                    {
+                        ModelState.AddModelError("", item);
+                    }
+                    return View(model);
+                }
+
+            }
+
+            return RedirectToAction(nameof(Members), new { division.Id });
+        }
+
+
+
+        [Authorize(Roles = "OrganizationUser")]
         public async Task<IActionResult> Create(int id)
         {
             var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
@@ -83,16 +278,16 @@ namespace DiplomService.Controllers
                 });
                 model.Measures.Add(measureModel);
             }
-
+            model.DivisionLeaders.Add(new());
             return View(model);
         }
-
+        [Authorize(Roles = "OrganizationUser")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int id, DivisionViewModel model)
         {
             if (!ModelState.IsValid)
-               return View(model);
+                return View(model);
 
             var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
             if (@event == null)
@@ -102,11 +297,12 @@ namespace DiplomService.Controllers
             {
                 Name = model.Name,
                 Description = model.Description,
-                Longitude= model.Longitude?? 0,
-                Latitude= model.Latitude ?? 0,
+                Longitude = model.Longitude ?? 0,
+                Latitude = model.Latitude ?? 0,
                 PreviewImage = model.PriviewImage,
-                DateOfStart = model.StartDate, 
+                DateOfStart = model.StartDate,
                 DateOfEnd = model.EndDate,
+                PlaceName = model.PlaceName,
                 Event = @event,
                 EventId = id,
             };
@@ -175,16 +371,34 @@ namespace DiplomService.Controllers
                     }
                 }
             }
+            foreach (var item in model.DivisionLeaders)
+            {
+                var user = await _userManager.FindByIdAsync(item.Id);
+                if (user is null)
+                    continue;
+
+                await _userManager.AddToRoleAsync(user, "MobileUser");
+
+                division.DivisionMembers.Add(new()
+                {
+                    Division = division,
+                    DivisionDirector = true,
+                    User = user
+                });
+
+            }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index), new { Id = id });
         }
 
+
+        [Authorize(Roles = "OrganizationUser")]
         public async Task<IActionResult> Edit(int id, int eventId)
         {
             var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (division == null)
+            if (division is null)
                 return NotFound();
 
             var model = new DivisionViewModel()
@@ -193,12 +407,12 @@ namespace DiplomService.Controllers
                 Description = division.Description,
                 Longitude = division.Longitude,
                 Latitude = division.Latitude,
-                PlaceName= division.PlaceName,
+                PlaceName = division.PlaceName,
                 PriviewImage = division.PreviewImage,
                 EventId = eventId,
                 StartDate = division.DateOfStart,
                 EndDate = division.DateOfEnd,
-                Name = division.Name
+                Name = division.Name,
             };
 
             foreach (var item in division.MeasureDivisionsInfos)
@@ -272,175 +486,249 @@ namespace DiplomService.Controllers
                 model.Measures.Add(measureModel);
             }
 
+            var directors = division.DivisionMembers.Where(x => x.DivisionDirector);
+            foreach (var item in directors)
+            {
+                model.DivisionLeaders.Add(new()
+                {
+                    Id = item.UserId,
+                    UserName = item.User.GetFullName()
+                });
+            }
+
             return View(model);
         }
-
+        [Authorize(Roles = "OrganizationUser")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, int eventId, DivisionViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
+            if (division is null)
+                return NotFound();
+
+            division.Name = model.Name;
+            division.Description = model.Description;
+            division.Longitude = model.Longitude is null ? 0 : model.Longitude.Value;
+            division.Latitude = model.Latitude is null ? 0 : model.Latitude.Value;
+            division.DateOfStart = model.StartDate;
+            division.DateOfEnd = model.EndDate;
+            division.PlaceName = model.PlaceName;
+
+            if (model.PriviewImage is not null)
+                division.PreviewImage = model.PriviewImage;
+
+            foreach (var item in model.Measures)
             {
-                var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
-                if (division == null)
-                    return NotFound();
+                var measureDivisionInfo = await _context.MeasureDivisionsInfos.FirstOrDefaultAsync(x => x.Id == item.Id);
+                if (measureDivisionInfo is null)
+                    continue;
 
-                division.Name = model.Name;
-                division.Description = model.Description;
-                division.Longitude = model.Longitude is null? 0: model.Longitude.Value;
-                division.Latitude = model.Latitude is null ? 0 : model.Latitude.Value;
-                division.DateOfStart = model.StartDate;
-                division.DateOfEnd = model.EndDate;
-                division.PlaceName = model.PlaceName;
-                if (model.PriviewImage != null)
+                measureDivisionInfo.OneTime = item.OneTime;
+                measureDivisionInfo.WeekDays = item.WeekDays;
+                measureDivisionInfo.Length = item.Length;
+                measureDivisionInfo.SameForAll = false;
+
+                if (item.OneTime)
                 {
-                    division.PreviewImage = model.PriviewImage;
-                }
-
-                foreach (var item in model.Measures)
-                {
-                    var measureDivisionInfo = await _context.MeasureDivisionsInfos.FirstOrDefaultAsync(x => x.Id == item.Id);
-                    if (measureDivisionInfo is null)
-                        continue;
-
-                    measureDivisionInfo.OneTime = item.OneTime;
-                    measureDivisionInfo.WeekDays = item.WeekDays;
-                    measureDivisionInfo.Length = item.Length;
-                    measureDivisionInfo.SameForAll = false;
-
-                    if (item.OneTime)
+                    var date = new MeasureDates();
+                    if (measureDivisionInfo.MeasureDates.Count > 0)
                     {
-                        var date = new MeasureDates();
-                        if (measureDivisionInfo.MeasureDates.Count > 0)
+                        date = measureDivisionInfo.MeasureDates[0];
+                        for (int i = 1; i < measureDivisionInfo.MeasureDates.Count; i++)
+                            _context.Remove(measureDivisionInfo.MeasureDates[i]);
+                    }
+
+                    date.MeasureDivisionsInfos = measureDivisionInfo;
+                    date.MeasureDivisionsInfosId = measureDivisionInfo.Id;
+                    date.Datetime = item.MeasureDates[0].Datetime;
+                    date.Place = item.Place;
+
+                    if (date.Id == 0)
+                        measureDivisionInfo.MeasureDates.Add(date);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    if (item.WeekDays)
+                    {
+                        measureDivisionInfo.MeasureDates.Clear();
+                        _context.RemoveRange(measureDivisionInfo.MeasureDates);
+
+                        foreach (var dayItem in item.MeasureDays)
                         {
-                            date = measureDivisionInfo.MeasureDates[0];
-                            for (int i = 1; i < measureDivisionInfo.MeasureDates.Count; i++)
-                                _context.Remove(measureDivisionInfo.MeasureDates[i]);
+                            bool contains = dayItem.Id != 0;
+                            if (!dayItem.Checked)
+                            {
+                                if (contains)
+                                {
+                                    var measureDay = measureDivisionInfo.MeasureDays.First(x => x.Id == dayItem.Id);
+                                    measureDivisionInfo.MeasureDays.Remove(measureDay);
+                                }
+                                continue;
+                            }
+
+                            if (contains)
+                            {
+                                var measureDay = measureDivisionInfo.MeasureDays.FirstOrDefault(x => x.Id == dayItem.Id);
+                                if (measureDay is null)
+                                    continue;
+                                measureDay.TimeSpan = dayItem.TimeSpan;
+                                measureDay.Place = dayItem.Place;
+                            }
+                            else
+                            {
+                                var day = new MeasureDays()
+                                {
+                                    DayNumber = dayItem.DayNumber,
+                                    TimeSpan = dayItem.TimeSpan,
+                                    Place = dayItem.Place,
+                                    MeasureDivisionsInfo = measureDivisionInfo
+                                };
+                                measureDivisionInfo.MeasureDays.Add(day);
+                            }
                         }
-
-                        date.MeasureDivisionsInfos = measureDivisionInfo;
-                        date.MeasureDivisionsInfosId = measureDivisionInfo.Id;
-                        date.Datetime = item.MeasureDates[0].Datetime;
-                        date.Place = item.Place;
-
-                        if (date.Id == 0)
-                            measureDivisionInfo.MeasureDates.Add(date);
-                        await _context.SaveChangesAsync();
                     }
                     else
                     {
-                        if (item.WeekDays)
+                        measureDivisionInfo.MeasureDays.Clear();
+                        _context.RemoveRange(measureDivisionInfo.MeasureDays);
+
+                        var ids = new List<int>();
+
+                        foreach (var dateItem in measureDivisionInfo.MeasureDates)
                         {
-                            measureDivisionInfo.MeasureDates.Clear();
-                            _context.RemoveRange(measureDivisionInfo.MeasureDates);
+                            ids.Add(dateItem.Id);
+                        }
 
-                            foreach (var dayItem in item.MeasureDays)
+                        foreach (var dateItem in item.MeasureDates)
+                        {
+                            bool contains = dateItem.Id != 0;
+                            if (contains)
                             {
-                                bool contains = dayItem.Id != 0;
-                                if (!dayItem.Checked)
-                                {
-                                    if (contains)
-                                    {
-                                        var measureDay = measureDivisionInfo.MeasureDays.First(x => x.Id == dayItem.Id);
-                                        measureDivisionInfo.MeasureDays.Remove(measureDay);
-                                    }
+                                ids.Remove(dateItem.Id);
+                                var measureDay = measureDivisionInfo.MeasureDates.FirstOrDefault(x => x.Id == dateItem.Id);
+                                if (measureDay is null)
                                     continue;
-                                }
+                                measureDay.Datetime = dateItem.Datetime;
+                                measureDay.Place = dateItem.Place;
+                            }
+                            else
+                            {
+                                var date = new MeasureDates()
+                                {
+                                    Datetime = dateItem.Datetime,
+                                    Place = dateItem.Place,
+                                    MeasureDivisionsInfos = measureDivisionInfo
+                                };
 
-                                if (contains)
-                                {
-                                    var measureDay = measureDivisionInfo.MeasureDays.FirstOrDefault(x => x.Id == dayItem.Id);
-                                    if (measureDay is null)
-                                        continue;
-                                    measureDay.TimeSpan = dayItem.TimeSpan;
-                                    measureDay.Place = dayItem.Place;
-                                }
-                                else
-                                {
-                                    var day = new MeasureDays()
-                                    {
-                                        DayNumber = dayItem.DayNumber,
-                                        TimeSpan = dayItem.TimeSpan,
-                                        Place = dayItem.Place,
-                                        MeasureDivisionsInfo = measureDivisionInfo
-                                    };
-                                    measureDivisionInfo.MeasureDays.Add(day);
-                                }
+                                measureDivisionInfo.MeasureDates.Add(date);
                             }
                         }
-                        else
+
+                        foreach (var dateItem in measureDivisionInfo.MeasureDates)
                         {
-                            measureDivisionInfo.MeasureDays.Clear();
-                            _context.RemoveRange(measureDivisionInfo.MeasureDays);
-
-                            var ids = new List<int>();
-
-                            foreach (var dateItem in measureDivisionInfo.MeasureDates)
+                            if (ids.Contains(dateItem.Id))
                             {
-                                ids.Add(dateItem.Id);
-                            }
-
-                            foreach (var dateItem in item.MeasureDates)
-                            {
-                                bool contains = dateItem.Id != 0;
-                                if (contains)
-                                {
-                                    ids.Remove(dateItem.Id);
-                                    var measureDay = measureDivisionInfo.MeasureDates.FirstOrDefault(x => x.Id == dateItem.Id);
-                                    if (measureDay is null)
-                                        continue;
-                                    measureDay.Datetime = dateItem.Datetime;
-                                    measureDay.Place = dateItem.Place;
-                                }
-                                else
-                                {
-                                    var date = new MeasureDates()
-                                    {
-                                        Datetime = dateItem.Datetime,
-                                        Place = dateItem.Place,
-                                        MeasureDivisionsInfos = measureDivisionInfo
-                                    };
-
-                                    measureDivisionInfo.MeasureDates.Add(date);
-                                }
-                            }
-
-                            foreach (var dateItem in measureDivisionInfo.MeasureDates)
-                            {
-                                if (ids.Contains(dateItem.Id))
-                                {
-                                    _context.Remove(dateItem);
-                                }
+                                _context.Remove(dateItem);
                             }
                         }
                     }
                 }
-                await _context.SaveChangesAsync();
-                return RedirectToAction("Index", new { Id = eventId });
             }
+            var divisionLeadersIds = division.DivisionMembers
+                .Where(x => x.DivisionDirector)
+                .Select(x => x.UserId);
 
-            return View(model);
-        }
+            var divisionLeadersToDelete = divisionLeadersIds.Except(model.DivisionLeaders.Select(x => x.Id)).ToList();
+            var divisionLeadersToAdd = model.DivisionLeaders.Select(x => x.Id).Except(divisionLeadersIds).ToList();
 
-        [HttpPost]
-        public async Task<IActionResult> Delete(int eventId, int id)
-        {
-            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
-            if (division is not null)
+            foreach (var userId in divisionLeadersToDelete)
             {
-                foreach (var item in division.MeasureDivisionsInfos)
-                {
-                    _context.Remove(item);
-                }
-                await _context.SaveChangesAsync();
-                _context.Remove(division);
-                await _context.SaveChangesAsync();
+                var divisionMemder = division.DivisionMembers.FirstOrDefault(x => x.UserId == userId);
+                if (divisionMemder is not null)
+                    division.DivisionMembers.Remove(divisionMemder);
+                _context.SaveChanges();
             }
 
+            foreach (var userId in divisionLeadersToAdd)
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user is null)
+                    continue;
 
+                await _userManager.AddToRoleAsync(user, "MobileUser");
+
+                if (!division.DivisionMembers.Any(x => x.User == user))
+                {
+                    division.DivisionMembers.Add(new()
+                    {
+                        Division = division,
+                        DivisionDirector = true,
+                        User = user
+                    });
+                }
+
+            }
+            await _context.SaveChangesAsync();
             return RedirectToAction("Index", new { Id = eventId });
         }
 
+        [HttpPost]
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == id);
+            if (division is null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (user is null)
+                return BadRequest();
+
+            if (!user.Organization.Events.Contains(division.Event))
+                return Unauthorized();
+
+            foreach (var item in division.MeasureDivisionsInfos)
+                _context.Remove(item);
+
+            await _context.SaveChangesAsync();
+            _context.Remove(division);
+            await _context.SaveChangesAsync();
+
+
+            return RedirectToAction("Index", new { Id = division.EventId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> DeleteUserFromDivision(int id)
+        {
+            var division = await _context.DivisionUsers.FirstOrDefaultAsync(x => x.Id == id);
+            if (division is null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
+            if (user is null)
+                return BadRequest();
+
+            if (!user.Organization.Events.Contains(division.Division.Event))
+                return Unauthorized();
+
+            if (division.Division.DivisionMembers.Count > 1)
+            {
+                division.Division.DivisionMembers.Remove(division);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Должен оставаться минимум один ответственный.";
+            }
+
+            return RedirectToAction(nameof(Members), new { Id = division.DivisionId });
+        }
 
         private bool DivisionExists(int id)
         {

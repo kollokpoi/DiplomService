@@ -10,7 +10,7 @@
 <div class="container">
     <div class="vertical-center-block">
         <form asp-action="Registration" method="post" enctype="multipart/form-data" class="login-form">
-            <p class="login-form__big-text">Заполните данные.</p>
+            <p class="login-form__big-text">Заполните данные</p>
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <span class="text-danger">@ViewBag.Error</span>
@@ -31,11 +31,20 @@
                 <input asp-for="LastName" class="login-form__input" placeholder="Отчество*" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
-
+            <div class="w-100 my-2">
+                <label asp-for="WorkingPlace" class="control-label"></label>
+                <input asp-for="WorkingPlace" class="login-form__input" placeholder="Образовательная организация*" />
+                <span asp-validation-for="WorkingPlace" class="text-danger"></span>
+            </div>
             <div class="w-100 my-2">
                 <label asp-for="Email" class="control-label"></label>
                 <input asp-for="Email" class="login-form__input" placeholder="Почта*" />
                 <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="w-100 my-2">
+                <label asp-for="PhoneNumber" class="control-label"></label>
+                <input asp-for="PhoneNumber" class="login-form__input" placeholder="Номер телефона*" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
             </div>
 
             <div class="w-100 my-2">

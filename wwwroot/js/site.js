@@ -71,4 +71,17 @@
     $("#faq").click(function () {
         $("#faq-body").toggleClass('visible');
     })
+
+
+    $('.burger-button').click(function () {
+        if ($(this).hasClass('active')) {
+            $(this).parent().toggleClass('active');
+        }
+        else {
+            $(this).parent().find('.header__nav-div').toggleClass('active');
+        }
+    })
+    $('.nav-img').click(function () {
+        $(this).toggleClass('active');
+    })
 });

@@ -1,5 +1,4 @@
-﻿using DiplomService.Models.Users;
-using Microsoft.Build.Framework;
+﻿using Microsoft.Build.Framework;
 using System.Text.Json.Serialization;
 
 namespace DiplomService.Models
@@ -14,7 +13,7 @@ namespace DiplomService.Models
         public string UserId { get; set; } = "";
         [Required]
         [JsonIgnore]
-        public virtual MobileUser User { get; set; } = new();
+        public virtual User User { get; set; } = new();
         [Required]
         public bool DivisionDirector { get; set; } = false;
     }

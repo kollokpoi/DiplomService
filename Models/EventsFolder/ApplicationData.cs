@@ -1,4 +1,4 @@
-﻿using DiplomService.Services.Attributes;
+﻿using DiplomService.Models.Users;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
@@ -9,6 +9,8 @@ namespace DiplomService.Models
     {
         [Key]
         public int Id { get; set; }
+        public string? UserId { get; set; }
+        public virtual MobileUser? User { get; set; }
 
         [Required(ErrorMessage = "Поле обязательно к заполнению")]
         public string? Name { get; set; }
@@ -34,7 +36,6 @@ namespace DiplomService.Models
         [Required(ErrorMessage = "Поле обязательно к заполнению")]
         public int Course { get; set; }
 
-        public bool DivisionDirector { get; set; } = false;
         [Required]
         public int ApplicationId { get; set; }
 
@@ -42,12 +43,11 @@ namespace DiplomService.Models
         [JsonIgnore]
         public virtual EventApplication? Application { get; set; }
 
-
         [Required]
         public int DivisionId { get; set; }
 
         [ForeignKey("DivisionId")]
         [JsonIgnore]
-        public virtual Division? Division { get; set; }
+        public virtual Division Division { get; set; } = new();
     }
 }

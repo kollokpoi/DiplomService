@@ -1,7 +1,7 @@
 ﻿@model DiplomService.ViewModels.Divisions.DivisionViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = @Model.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 @{
@@ -14,7 +14,7 @@
 }
 <div class="intro" style="height:40vh">
     <div class="intro__column">
-        <p class="title-text">Заполните данные об организуемом мероприятии</p>
+        <p class="intro__title">Заполните о подразделении</p>
     </div>
 </div>
 
@@ -47,7 +47,7 @@
                         }
                     }
                     <div>
-                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg" class="btn" type="file" placeholder="" />
+                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg .gif" class="btn" type="file" placeholder="" />
                         <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
                     </div>
                 </div>
@@ -66,16 +66,45 @@
                     <textarea asp-for="Description" class="login-form__input textarea-input"></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
-                <div class="form-group my-2">
-                    <label asp-for="PlaceName" class="control-label">Основное место проведения*</label>
-                    <input asp-for="PlaceName" class="login-form__input form-control" />
-
-                    <div id="suggestionsDropdown" style="position: absolute; display: none; z-index:10"></div>
-                </div>
             </div>
 
         </div>
+        <div class="form-group my-2" id="divisionLeadersHolder">
+            <p class="control-label">Ответственные пользователи*</p>
+            <div id="divisionLeadersList">
+                @if (Model is not null)
+                {
+                    @for (int i = 0; i < Model.DivisionLeaders.Count; i++)
+                    {
+                        <div class="my-2 position-relative">
+                            @if (i != 0)
+                            {
+                                <div class="d-flex align-items-center">
+                                    <input asp-for="DivisionLeaders[i].UserName" class="login-form__input form-control my-2 userSuggestionInput" />
+                                    <div class="deleteBtn" data-index="@i">
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <input asp-for="DivisionLeaders[i].UserName" class="login-form__input form-control my-2 userSuggestionInput" />
+                            }
+                            <div class="suggestionsUserDropdown" style="position: absolute; display: none; z-index:10"></div>
+                            <span asp-validation-for="DivisionLeaders[i].UserName" class="text-danger"></span>
+                            <input type="hidden" asp-for="DivisionLeaders[i].Id" class="DivisionLeadersId" />
+                            <span asp-validation-for="DivisionLeaders[i].Id" class="text-danger"></span>
+                        </div>
+                    }
+                }
+            </div>
+            <button type="button" id="divisionLeaderAddBtn" class="btn btn-primary my-3 w-25 mx-auto d-block">Добавить</button>
+        </div>
+        <div class="form-group my-2">
+            <label asp-for="PlaceName" class="control-label">Основное место проведения*</label>
+            <input asp-for="PlaceName" class="login-form__input form-control" />
 
+            <div id="suggestionsDropdown" style="position: absolute; display: none; z-index:10"></div>
+        </div>
         <div class="form-group my-2">
             <input type="hidden" asp-for="Longitude" />
             <input type="hidden" asp-for="Latitude" />
@@ -141,6 +170,11 @@
                             multiVisible = "";
                             singleVisible = "display:none";
                         }
+                        <div style="@singleVisible" class="form-group my-2" id="singleDatePick">
+                            <label asp-for="Measures[i].MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
+                            <input asp-for="Measures[i].MeasureDates[0].Datetime" type="datetime-local" class="login-form__input form-control" />
+                            <span asp-validation-for="Measures[i].MeasureDates[0].Datetime" class="text-danger"></span>
+                        </div>
                         <div style="@multiVisible" id="multiplyDatePick">
                             <div class="form-group my-2">
                                 <label asp-for="Measures[i].WeekDays" class="control-label">Режим выбора дат</label>
@@ -265,21 +299,19 @@
                             }
 
                         </div>
-                        <div style="@singleVisible" class="form-group my-2" id="singleDatePick">
-                            <label asp-for="Measures[i].MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
-                            <input asp-for="Measures[i].MeasureDates[0].Datetime" type="datetime-local" class="login-form__input form-control" />
-                            <span asp-validation-for="Measures[i].MeasureDates[0].Datetime" class="text-danger"></span>
-                        </div>
                     }
                 </div>
             }
         }
-        <input type="submit" value="Сохранить" class="btn btn-primary w-25 mt-3" />
+        <div class="d-flex w-100 justify-content-between mt-3">
+            <input type="button" value="Удалить" onclick="getElementById('deleteFormBtn').click()" class="btn btn-primary w-25" />
+            <input type="submit" value="Сохранить" class="btn btn-primary w-25 " />
+        </div>
     </form>
     <form asp-action="Delete" method="post" class="d-flex justify-content-end">
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="EventId" />
-        <input type="submit" value="Удалить" class="btn btn-danger" />
+        <input type="submit" id="deleteFormBtn" class="btn btn-danger d-none" />
     </form>
 </div>
 
@@ -318,6 +350,7 @@
 @section Scripts{
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <script src="~/js/GetUsersScript.js" asp-append-version="true"></script>
         <script src="~/js/showImage.js" asp-append-version="true"></script>
         <script src="~/js/MeasureScript.js" asp-append-version="true"></script>
         <script src="https://api-maps.yandex.ru/2.1/?apikey=778e1228-3aaa-4187-9f60-b49fbe5c5ce5&lang=ru_RU" type="text/javascript"></script>

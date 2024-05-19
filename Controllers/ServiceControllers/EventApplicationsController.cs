@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using DiplomService.Database;
+﻿using DiplomService.Database;
 using DiplomService.Models;
+using DiplomService.Models.Users;
+using DiplomService.Services;
+using DiplomService.ViewModels.EventApplication;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using DiplomService.Models.Users;
-using DiplomService.ViewModels.EventApplication;
-using DiplomService.Services;
-using DiplomService.ViewModels;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 
 namespace DiplomService.Controllers
 {
@@ -36,24 +31,16 @@ namespace DiplomService.Controllers
 
             var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == Id);
 
-            if (@event == null)
+            if (@event is null)
                 return NotFound();
 
             var model = new EventApplicationViewModel()
             {
                 EventId = Id,
-                ApplicationDatas = new()
-                {
-                    new()
-                    {
-                        Birthday = DateTime.Now.AddYears(-16),
-                    }
-                },
                 DivisionsExist = @event.DivisionsExist,
-                ApplicationSenderId = user.Id,
                 Divisions = @event.Divisions
             };
-
+            model.ApplicationDatas.Add(new());
 
             return View(model);
         }
@@ -61,78 +48,154 @@ namespace DiplomService.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "WebUser")]
-        public async Task<IActionResult> Create(EventApplicationViewModel model)
+        public async Task<IActionResult> Create(int id,List<ApplicationDataViewModel> applicationDatas)
         {
-            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == model.EventId);
-            if (@event == null)
+            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == id);
+            if (@event is null)
                 return NotFound();
-            model.Divisions = @event.Divisions;
 
-            if (ModelState.IsValid)
+            var model = new EventApplicationViewModel()
             {
-                if (await _userManager.GetUserAsync(User) is not Models.Users.WebUser user)
-                    return BadRequest();
+                EventId = @event.Id,
+                DivisionsExist = @event.DivisionsExist,
+                Divisions = @event.Divisions,
+                ApplicationDatas = applicationDatas
+            };
 
-                Dictionary<string, string> phones = new();
-                Dictionary<string, string> mails = new();
+            if (!ModelState.IsValid)
+                return View(model);
 
-                foreach (var item in model.ApplicationDatas)
+            if (await _userManager.GetUserAsync(User) is not Models.Users.WebUser user)
+                return BadRequest();
+
+            var application = new EventApplication
+            {
+                ApplicationSender = user,
+                Email = user.Email,
+                Event = @event,
+                EventId = id,
+                TimeOfSend = DateTime.Now,
+                Institution = user.WorkingPlace,
+            };
+
+            for (int i = 0; i < applicationDatas.Count; i++)
+            {
+                var applicationData = new ApplicationData();
+                if (applicationDatas[i].UserId is null)
                 {
-                    item.PhoneNumber = PhoneWorker.NormalizePhone(item.PhoneNumber);
-                    if (!phones.ContainsKey(item.PhoneNumber))
+                    var nameParts = applicationDatas[i].Name.Split();
+                    if (applicationDatas[i].Course is null)
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Course", "Укажите класс/курс");
+
+                    if (applicationDatas[i].Email is null)
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Email", "Укажите почтовый адрес");
+                    else if (_context.Users.Any(x => x.Email == applicationDatas[i].Email))
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Email", "Пользователь с указаной почтой уже зарегистрирован");
+                    else if (applicationDatas.Any(x => x.Email is not null && x != applicationDatas[i] && applicationDatas[i].Email == x.Email))
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Email", "Дублирование электронной почты");
+
+                    if (applicationDatas[i].Birthday is null)
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Birthday", "Укажите дату рождения");
+                    if (applicationDatas[i].PhoneNumber is null)
+                        ModelState.AddModelError($"ApplicationDatas[{i}].PhoneNumber", "Укажите номер телефона");
+                    else if (_context.Users.Any(x => x.PhoneNumber == PhoneWorker.NormalizePhone(applicationDatas[i].PhoneNumber)))
+                        ModelState.AddModelError($"ApplicationDatas[{i}].PhoneNumber", "Пользователь с указанным номером телефона зарегистрирован");
+                    else if (applicationDatas.Any(x=> x.PhoneNumber is not null && x!= applicationDatas[i] && PhoneWorker.NormalizePhone(x.PhoneNumber) == PhoneWorker.NormalizePhone(applicationDatas[i].PhoneNumber)))
+                        ModelState.AddModelError($"ApplicationDatas[{i}].PhoneNumber", "Дублирование номеров телефона");
+
+                    if (nameParts.Length!=3)
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Name", "Укажите полное фио");
+
+
+                    if (@event.DivisionsExist)
                     {
-                        phones.Add(item.PhoneNumber, item.SecondName + " " + item.Name);
+                        if (applicationDatas[i].DivisionId is null)
+                            ModelState.AddModelError($"ApplicationDatas[{i}].DivisionId", "Укажите подразделение");
+                        else
+                        {
+                            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == applicationDatas[i].DivisionId);
+                            if (division is null)
+                                ModelState.AddModelError($"ApplicationDatas[{i}].DivisionId", "Укажите подразделение");
+                            else
+                                applicationData.Division = division;
+                        }
+                            
                     }
                     else
                     {
-                        ModelState.AddModelError("", "Номера телефонов " + item.SecondName + " " + item.Name + " и " + phones.First(x => x.Key == item.PhoneNumber).Value + " совпадают");
-                        return View(model);
+                        applicationData.DivisionId = @event.Divisions[0].Id;
                     }
 
-                    if (!phones.ContainsKey(item.Email))
-                    {
-                        mails.Add(item.Email, item.SecondName + " " + item.Name);
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", "Почтовые адреса " + item.SecondName + " " + item.Name + " и " + mails.First(x => x.Key == item.Email).Value + " совпадают");
-                        return View(model);
-                    }
+                    
 
-                    var userByEmail = _context.Users.FirstOrDefault(x => x.PhoneNumber == item.PhoneNumber);
-                    var userByPhone = _context.Users.FirstOrDefault(x => x.Email == item.Email);
-
-                    if ((userByEmail != userByPhone) && (userByEmail!=null && userByPhone!=null))
-                    {
-                        ModelState.AddModelError("", "Пользователь с почтовым адресом " + item.Email + " уже зарегистрирован и имеет иной номер телефона");
+                    if (!ModelState.IsValid)
                         return View(model);
-                    }
-                    if (!@event.DivisionsExist)
-                    {
-                        item.Division = @event.Divisions[0];
-                    }
+
+                    
+                    applicationData.Application = application;
+                    applicationData.Course = applicationDatas[i].Course ?? 0;
+                    applicationData.Email = applicationDatas[i].Email ?? "";
+                    applicationData.Birthday = applicationDatas[i].Birthday ?? DateTime.Now;
+                    applicationData.Name = nameParts[1];
+                    applicationData.SecondName = nameParts[0];
+                    applicationData.LastName = nameParts[2];
+                    applicationData.PhoneNumber = PhoneWorker.NormalizePhone(applicationDatas[i].PhoneNumber ?? "");
+
+                    application.ApplicationData.Add(applicationData);
                 }
-                
-                var application = new EventApplication
+                else
                 {
-                    ApplicationData = model.ApplicationDatas,
-                    ApplicationSender = user,
-                    Email = user.Email,
-                    Event = @event,
-                    EventId = model.EventId,
-                    ApplicationSenderId = model.ApplicationSenderId,
-                    Institution = model.Institution,
-                    TimeOfSend = DateTime.Now,
-                };
+                    var mobileUser = await _userManager.FindByIdAsync(applicationDatas[i].UserId) as MobileUser;
+                    if (mobileUser is null)
+                        ModelState.AddModelError($"ApplicationDatas[{i}].Name", "Выберите из списка");
 
-                await _context.AddAsync(application);
-                await _context.SaveChangesAsync();
+                    if (!ModelState.IsValid || mobileUser is null)
+                        return View(model);
 
-                return RedirectToAction("Index");
+                    applicationData.Application = application;
+                    applicationData.Course = mobileUser.Course;
+                    applicationData.Email = mobileUser.Email ?? "";
+                    applicationData.Birthday = mobileUser.Birthday;
+                    applicationData.Name = mobileUser.Name;
+                    applicationData.SecondName = mobileUser.SecondName;
+                    applicationData.LastName = mobileUser.LastName;
+                    applicationData.PhoneNumber = mobileUser.PhoneNumber ?? "";
+                    applicationData.User = mobileUser;
+                    applicationData.UserId = mobileUser.Id;
+
+                    if (@event.DivisionsExist)
+                    {
+                        if (applicationDatas[i].DivisionId is null)
+                            ModelState.AddModelError($"ApplicationDatas[{i}].DivisionId", "Укажите подразделение");
+                        else
+                        {
+                            var division = await _context.Divisions.FirstOrDefaultAsync(x => x.Id == applicationDatas[i].DivisionId);
+                            if (division is null)
+                                ModelState.AddModelError($"ApplicationDatas[{i}].DivisionId", "Укажите подразделение");
+                            else
+                                applicationData.Division = division;
+                        }
+
+                    }
+                    else
+                    {
+                        applicationData.DivisionId = @event.Divisions[0].Id;
+                    }
+
+                    application.ApplicationData.Add(applicationData);
+                }
             }
             
-            return View(model);
+
+            
+            await _context.AddAsync(application);
+            await _context.SaveChangesAsync();
+            
+            return RedirectToAction("Index");
+
         }
+
+
 
         [Authorize(Roles = "OrganizationUser")]
         public async Task<IActionResult> Edit(int Id)
@@ -147,11 +210,50 @@ namespace DiplomService.Controllers
 
             return View(application);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "OrganizationUser")]
+        public async Task<IActionResult> Edit(int Id, string comment, string action)
+        {
+            var application = await _context.EventApplications.FirstOrDefaultAsync(x => x.Id == Id);
+
+            if (application == null)
+                return NotFound();
+
+            if (!await CheckOrgUserAccess(application))
+                return BadRequest();
+
+            bool accepted = action == "success";
+            application.Accepted = accepted;
+
+            await _context.SaveChangesAsync();
+
+            var model = new ViewModels.Email.EventApplicationViewModel
+            {
+                Accepted = accepted,
+                Comment = comment,
+                Email = application.Email,
+                BaseUrl = $"{this.Request.Scheme}://{this.Request.Host}" + Url.Action("Index", "Home")
+            };
+
+            var renderer = HttpContext.RequestServices.GetRequiredService<IRazorViewToStringRenderer>();
+            var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/EventApplicationResponce", model, HttpContext.RequestServices);
+
+            SmtpService.SendEventApplicationResponce(htmlMessage, model);
+            if (accepted)
+                await CreateUsers(application);
+            
+            return RedirectToAction("Index", "Cabinet");
+        }
+
+
+
         [Authorize(Roles = "WebUser")]
         public async Task<IActionResult> Details(int Id)
         {
             var userId = _userManager.GetUserId(User);
-            var application = await _context.EventApplications.FirstOrDefaultAsync(x => x.Id == Id && x.ApplicationSenderId == userId);
+            var application = await _context.EventApplications.FirstOrDefaultAsync(
+                x => x.Id == Id && x.ApplicationSenderId == userId);
 
             if (application == null)
                 return NotFound();
@@ -174,9 +276,10 @@ namespace DiplomService.Controllers
         [Authorize(Roles = "OrganizationUser,WebUser")]
         public async Task<IActionResult> Index()
         {
-            User? user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return BadRequest();
+
             List<EventApplication>? application = null;
             if (user is OrganizationUsers)
             {
@@ -184,13 +287,13 @@ namespace DiplomService.Controllers
                 application = _context.Organizations
                     .Where(org => org.Id == organizationId)
                     .SelectMany(org => org.Events.SelectMany(ev => ev.EventApplications))
-                    .Where(x=>x.Accepted==null).ToList();
+                    .Where(x => x.Accepted == null).ToList();
             }
             else
             {
                 application = _context.EventApplications.Where(x => x.ApplicationSenderId == user.Id).OrderBy(x => x.Accepted != null).ToList();
             }
-             
+
 
             if (application == null)
                 return NotFound();
@@ -198,56 +301,7 @@ namespace DiplomService.Controllers
             return View(application);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "OrganizationUser")]
-        public async Task<IActionResult> Edit(int Id,string comment, string action)
-        {
-            var application = await _context.EventApplications.FirstOrDefaultAsync(x => x.Id == Id);
 
-            if (application == null)
-                return NotFound();
-
-            if (!await CheckOrgUserAccess(application))
-                return BadRequest();
-
-            bool accepted = action == "success";
-            application.Accepted = accepted;
-
-            await _context.SaveChangesAsync();
-
-            var model = new ViewModels.Email.EventApplicationViewModel
-            {
-                Accepted= accepted,
-                Comment= comment,
-                Email = application.Email,
-                BaseUrl = $"{this.Request.Scheme}://{this.Request.Host}" + Url.Action("Index", "Home")
-            };
-
-            var renderer = HttpContext.RequestServices.GetRequiredService<IRazorViewToStringRenderer>();
-            var htmlMessage = await renderer.RenderViewToStringAsync("HtmlTemplates/EventApplicationResponce", model, HttpContext.RequestServices);
-
-            SmtpService.SendEventApplicationResponce(htmlMessage, model);
-            await CreateUsers(application);
-            return RedirectToAction("Index", "Cabinet");
-        }
-
-        public async Task<IActionResult> GetParticipantEntry(int Id,int Index)
-        {
-            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == Id);
-
-            if (@event == null)
-                return NotFound();
-
-            var model = new ApplicationDataViewModel
-            {
-                ApplicationDatas = new(),
-                Divisions = @event.Divisions,
-                DivisionsExist = @event.DivisionsExist,
-            };
-            ViewBag.Index = Index;
-            return PartialView("_ApplicationDataEntry", model);
-        }
 
         public async Task<WebUser?> FindByPhoneNumberAsync(string phoneNumber)
         {
@@ -256,7 +310,7 @@ namespace DiplomService.Controllers
         private async Task<bool> CheckOrgUserAccess(EventApplication application)
         {
             var user = await _userManager.GetUserAsync(User) as OrganizationUsers;
-            if (user!=null && user.Organization.Events.Contains(application.Event))
+            if (user != null && user.Organization.Events.Contains(application.Event))
             {
                 return true;
             }
@@ -266,58 +320,71 @@ namespace DiplomService.Controllers
         {
             foreach (var item in application.ApplicationData)
             {
-                MobileUser? user  = await _context.MobileUsers.FirstOrDefaultAsync(x=>x.Email==item.Email);
-
-                if (user==null)
+                if (item.User is not null)
                 {
-                    user = new MobileUser()
+                    if (!_context.DivisionUsers.Any(x=>x.User==item.User && x.Division == item.Division))
                     {
-                        UserName = item.PhoneNumber,
-                        SecondName = item.SecondName,
-                        Name = item.Name,
-                        LastName = item.LastName,
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        Birthday = item.Birthday,
-                        Course = item.Course,
-                    };
-
-                    var result = await _userManager.CreateAsync(user);
-                    if (result == IdentityResult.Success)
-                    {
-                        await _userManager.AddToRoleAsync(user, "MobileUser");
+                        _context.DivisionUsers.Add(new()
+                        {
+                            Division = item.Division,
+                            User = item.User,
+                        });
+                        await _context.SaveChangesAsync();
                     }
-
-                }
-
-                if (item.Division != null)
-                {
-                    user.UserDivisions.Add(new DivisionUsers()
-                    {
-                        User = user,
-                        Division = item.Division,
-                        DivisionDirector = false
-                    });
                 }
                 else
                 {
-                    user.UserDivisions.Add(new DivisionUsers()
+                    var user = new MobileUser()
                     {
-                        Division = application.Event.Divisions[0],
-                        User = user,
-                        DivisionDirector = false
-                    });
+                        Birthday = item.Birthday,
+                        Course = item.Course,
+                        Email = item.Email,
+                        NormalizedEmail = item.Email.ToUpper(),
+                        LastName = item.LastName,
+                        Name = item.Name,
+                        SecondName = item.SecondName,
+                        UserName = item.PhoneNumber,
+                        NormalizedUserName = item.PhoneNumber,
+                        PhoneNumber = item.PhoneNumber,
+                    };
+                    var regResult = await _userManager.CreateAsync(user);
+                    if (regResult.Succeeded)
+                    {
+                        await _userManager.AddToRoleAsync(user, "MobileUser");
+                        _context.DivisionUsers.Add(new()
+                        {
+                            Division = item.Division,
+                            User = user
+                        });
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
             }
-            
+
+            var divisions = application.ApplicationData.Select(x => x.Division).Distinct().ToList();
+            foreach (var item in divisions)
+            {
+                if (!_context.DivisionUsers.Any(x => x.Division == item && x.UserId == application.ApplicationSenderId))
+                {
+                    _context.DivisionUsers.Add(new DivisionUsers()
+                    {
+                        Division = item,
+                        DivisionDirector = false,
+                        UserId = application.ApplicationSenderId
+                    });
+                }
+            }
+
+
             await _context.SaveChangesAsync();
         }
+
         [HttpPost]
         public async Task<IActionResult> DeleteData(int Id)
         {
             var applicationData = await _context.ApplicationData.FirstOrDefaultAsync(x => x.Id == Id);
-            if (applicationData!=null)
+            if (applicationData != null)
             {
                 _context.Remove(applicationData);
                 await _context.SaveChangesAsync();
@@ -327,6 +394,23 @@ namespace DiplomService.Controllers
             {
                 return BadRequest();
             }
+        }
+
+        public async Task<IActionResult> GetParticipantEntry(int Id, int Index)
+        {
+            var @event = await _context.Events.FirstOrDefaultAsync(x => x.Id == Id);
+
+            if (@event == null)
+                return NotFound();
+
+            var model = new EventApplicationViewModel
+            {
+                ApplicationDatas = new(),
+                Divisions = @event.Divisions,
+                DivisionsExist = @event.DivisionsExist,
+            };
+            ViewBag.Index = Index;
+            return PartialView("_ApplicationDataEntry", model);
         }
     }
 }

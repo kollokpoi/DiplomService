@@ -1,0 +1,61 @@
+﻿@using DiplomService.ViewModels.AuthViewModels
+@model AdministratorRegistrationViewModel
+@{
+    Layout = "_Layout";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/cabinetstyle.css" asp-append-version="true" />
+}
+
+<div class="intro" style="height:50vh">
+    <div class="intro__column">
+        <p class="intro__title">Пользователи сервиса</p>
+    </div>
+</div>
+<div class="container">
+    <div class="navigation-block">
+        <partial name="_NavPartial" />
+    </div>
+    <form method="post" enctype="multipart/form-data">
+        <p class="login-form__big-text">Заполните данные</p>
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <span class="text-danger">@ViewBag.Error</span>
+        <span class="text-success">@ViewBag.Success</span>
+        <div class="w-100 my-2">
+            <label asp-for="SecondName" class="control-label text-left"></label>
+            <input asp-for="SecondName" class="login-form__input" placeholder="Фамилия*" />
+            <span asp-validation-for="SecondName" class="text-danger"></span>
+        </div>
+
+        <div class="w-100 my-2">
+            <label asp-for="Name" class="control-label"></label>
+            <input asp-for="Name" class="login-form__input" placeholder="Имя*" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="w-100 my-2">
+            <label asp-for="LastName" class="control-label"></label>
+            <input asp-for="LastName" class="login-form__input" placeholder="Отчество*" />
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+        <div class="w-100 my-2">
+            <label asp-for="Email" class="control-label"></label>
+            <input asp-for="Email" class="login-form__input" placeholder="Почта*" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div class="w-100 my-2">
+            <label asp-for="PhoneNumber" class="control-label"></label>
+            <input asp-for="PhoneNumber" class="login-form__input" placeholder="Номер телефона*" />
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+        </div>
+
+        <input type="submit" value="Сохранить" class="login-form__submit" />
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/searchScript.js"></script>
+    <script src="~/js/searchInputPopUp.js"></script>
+}

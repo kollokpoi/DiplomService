@@ -8,7 +8,7 @@
 
 <div class="intro" style="height:45vh">
     <div class="intro__column">
-        <p class="title-text">@Model.Name</p>
+        <p class="intro__title">@Model.Name</p>
     </div>
 </div>
 
@@ -17,10 +17,10 @@
         <a asp-action="Index" class="link-arrow left">Все события</a>
         <a asp-action="Index" asp-controller="News" asp-route-Id="@Model.Id" class="link-arrow right">Новости</a>
     </div>
-    <div class="d-flex endHiden image-text_block align-items-center mb-4 mt-4">
+    <div class="d-flex endHiden image-text_block mb-4 mt-4">
         @if (Model.PriviewImage != null)
         {
-            string? mimeType = Model.MimeType; 
+            string? mimeType = Model.MimeType;
 
             if (mimeType != null)
             {
@@ -32,7 +32,8 @@
             <img src="/Images/camara.png" alt="Image" class="bigMainImage">
         }
         <div class="ms-5">
-            <p class="item-block__text h5"><span class="fw-bold">Описание: </span>@Model.Description</p>
+            <p class="item-block__text h5 fw-bold">@Model.Name</p>
+            <p class="item-block__text h5">Описание: @Model.Description</p>
         </div>
     </div>
     <div class="d-flex justify-content-between">
@@ -59,7 +60,7 @@
             <p class="item-block__text fw-bold h5 mb-3 mt-5">Подразделения:</p>
             foreach (var item in Model.Divisions)
             {
-                <a href="/Divisions/Details/@item.Id" class="my-2 item-block py-2 d-flex">
+                <a asp-action="Details" asp-controller="Divisions" asp-route-id="@item.Id" class="my-2 item-block py-2 d-flex">
                     @if (item.PreviewImage != null)
                     {
                         string? mimeType = item.MimeType; // MIME-тип по умолчанию
@@ -80,6 +81,37 @@
                         </p>
                     </div>
                 </a>
+            }
+        }
+        else
+        {
+            <p class="item-block__text fw-bold h5 mb-3 mt-5">Расписание:</p>
+            for (int i = 0; i < Model.MeasuresViewModel.Count && i < 6; i++)
+            {
+                <div class="my-2 item-block py-2 d-flex">
+                    @if (@Model.MeasuresViewModel[i].Icon is not null)
+                    {
+                        string? mimeType = @Model.MeasuresViewModel[i].MimeType; // MIME-тип по умолчанию
+
+                        if (mimeType is not null)
+                        {
+                            <img src="data:@mimeType;base64,@Convert.ToBase64String(@Model.MeasuresViewModel[i].Icon)" alt="Image" class="item-block__image">
+                        }
+                    }
+                    else
+                    {
+                        <img src="/Images/camara.png" alt="Image" class="item-block__image">
+                    }
+                    <div class="item-block__column">
+                        <p class="item-block__title">@Model.MeasuresViewModel[i].EventName</p>
+                        <p class="item-block__text">
+                            Начало: @Model.MeasuresViewModel[i].DateTime
+                        </p>
+                        <p class="item-block__text">
+                            Продолжительность: @Model.MeasuresViewModel[i].Length
+                        </p>
+                    </div>
+                </div>
             }
         }
     }

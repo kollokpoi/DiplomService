@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using DiplomService.Database;
+using DiplomService.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using DiplomService.Database;
-using DiplomService.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
-using DiplomService.Models.Users;
 
 namespace DiplomService.Controllers.ApiContollers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EventsController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -34,7 +29,7 @@ namespace DiplomService.Controllers.ApiContollers
             {
                 return NotFound();
             }
-            return await _context.Events.Where(x=>x.ReadyToShow && x.PublicEvent).ToListAsync();
+            return await _context.Events.Where(x => x.ReadyToShow && x.PublicEvent).ToListAsync();
         }
 
         [HttpGet("GetEventsForUser")]
@@ -47,11 +42,11 @@ namespace DiplomService.Controllers.ApiContollers
             }
             else
             {
-                var events = _context.MobileUsers
+                var events = _context.Users
                     .Where(mu => mu == user)
                     .SelectMany(mu => mu.UserDivisions)
                     .Select(du => du.Division.Event)
-                    .Where(e=> e.ReadyToShow)
+                    .Where(e => e.ReadyToShow && (e.DateOfEnd == null ||e.DateOfEnd<DateTime.UtcNow))
                     .Distinct()
                     .ToList();
                 return Ok(events);
@@ -61,6 +56,7 @@ namespace DiplomService.Controllers.ApiContollers
         [HttpGet("GetEvent/{id}")]
         public async Task<ActionResult<Event>> GetEvent(int id)
         {
+            
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
@@ -70,13 +66,17 @@ namespace DiplomService.Controllers.ApiContollers
             {
                 return NotFound();
             }
-            var @event = await _context.Events.FindAsync(id);
+            var @event = await _context.Events.FirstOrDefaultAsync(x=>x.Id == id);
 
             if (@event == null)
             {
                 return NotFound();
             }
-            @event.Divisions = @event.Divisions.Where(div => div.DivisionMembers.Any(dm => dm.UserId == user.Id)).ToList();
+            if (@event.DivisionsExist)
+            {
+                @event.Divisions = @event.Divisions.Where(div => div.DivisionMembers.Any(dm => dm.UserId == user.Id)).ToList();
+            }
+           
             return @event;
         }
     }
