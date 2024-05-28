@@ -2,9 +2,17 @@
 
     let dateOfStart = $("input[name='StartDate']").val();
     let dateOfEnd = $("input[name='EndDate']").val();
-    let divisionsExists = $("#DivisionExist").val() === 'True';
+    let s = $("#DivisionsExists").val();
+    let divisionsExists = $("#DivisionsExists").val() === 'False';
     let eventId = $("#EventId").val();
 
+    var datesblockCopy =  `<label class="control-label" for="Measures_0__MeasureDates_0__Datetime">Укажите дату и время проведения*</label>
+                        <input type="datetime-local" class="login-form__input form-control input-validation-error" data-val="true" data-val-required="The Datetime field is required." id="Measures_0__MeasureDates_0__Datetime" name="Measures[0].MeasureDates[0].Datetime"><input name="__Invariant" type="hidden" value="Measures[0].MeasureDates[0].Datetime">
+                        <span class="text-danger field-validation-error" data-valmsg-for="Measures[0].MeasureDates[0].Datetime" data-valmsg-replace="true"></span>`;
+    var measureDatesblockCopy = `<div style="" class="form-group my-2" id="singleDatePick">
+                            <label class="control-label" for="MeasureDates_0__Datetime">Укажите дату и время проведения*</label>
+                            <input type="datetime-local" class="login-form__input form-control valid" data-val="true" data-val-required="The Datetime field is required." id="MeasureDates_0__Datetime" name="MeasureDates[0].Datetime"aria-describedby="MeasureDates_0__Datetime-error" aria-invalid="false"><input name="__Invariant" type="hidden" value="MeasureDates[0].Datetime">
+                            <span class="text-danger field-validation-valid" data-valmsg-for="MeasureDates[0].Datetime" data-valmsg-replace="true"></span></div>`;
      
     $(document).on('change', '.measureUniqueCheckbox', function () {
         let isChecked = $(this).prop("checked");
@@ -45,9 +53,16 @@
         if (value === 'true') {
             parentBlock.find('#singleDatePick').show();
             parentBlock.find('#multiplyDatePick').hide();
+            if (divisionsExists) {
+                parentBlock.find('#singleDatePick').append(measureDatesblockCopy);
+            } else {
+                parentBlock.find('#singleDatePick').append(datesblockCopy);
+            }
+            
         } else if (value === 'false') {
             parentBlock.find('#multiplyDatePick').show();
             parentBlock.find('#singleDatePick').hide();
+            parentBlock.find('#singleDatePick').empty();
         }
     });
     $(document).on('change', '#measureDatesMode', function () {

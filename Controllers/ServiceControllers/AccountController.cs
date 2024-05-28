@@ -38,45 +38,26 @@ namespace DiplomService.Controllers.ServiceControllers
                 {
                     var user = await _userManager.FindByEmailAsync(model.Email);
                     if (user != null)
-                    {
-
                         if (await _userManager.IsInRoleAsync(user, "OrganizationUser"))
                         {
                             if (user is not OrganizationUsers realUser)
                                 return BadRequest();
-
                             var organization = realUser.Organization;
-                            if (organization != null)
-                            {
-                                if (!organization.ReadyToShow)
-                                {
-                                    return RedirectToAction("EndRegistration", "OrganizationUser", new { organization.Id });
-                                }
-                            }
+                            if (organization != null && !organization.ReadyToShow) return RedirectToAction("EndRegistration", "OrganizationUser", new { organization.Id });
                         }
-                    }
-
                     if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-                    {
                         return Redirect(model.ReturnUrl);
-                    }
                     else
-                    {
                         return RedirectToAction("Index", "Home");
-                    }
                 }
                 else
                 {
                     if (result.IsLockedOut)
                     {
                         var user = await _userManager.FindByEmailAsync(model.Email);
-                        if (user != null)
-                            if (user.LockoutEnd != null)
-                                ModelState.AddModelError("", $"Вы заблокированы до {user.LockoutEnd.Value.Date.ToShortDateString()}");
-
+                        if (user != null && user.LockoutEnd != null) ModelState.AddModelError("", $"Вы заблокированы до {user.LockoutEnd.Value.Date.ToShortDateString()}");
                     }
-                    else
-                        ModelState.AddModelError("", "Неправильный логин и (или) пароль");
+                    else ModelState.AddModelError("", "Неправильный логин и (или) пароль");
                 }
             }
             return View(model);

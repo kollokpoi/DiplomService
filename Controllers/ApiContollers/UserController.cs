@@ -83,6 +83,12 @@ namespace DiplomService.Controllers.ApiContollers
                     _context.SaveChanges();
                     return Ok();
                 }
+                else
+                {
+                    user.DeviceTokens.RemoveAll(x => x.DeviceToken != token);
+                    _context.SaveChanges();
+                    return Ok();
+                }
             return BadRequest();
         }
 

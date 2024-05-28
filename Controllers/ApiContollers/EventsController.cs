@@ -46,7 +46,7 @@ namespace DiplomService.Controllers.ApiContollers
                     .Where(mu => mu == user)
                     .SelectMany(mu => mu.UserDivisions)
                     .Select(du => du.Division.Event)
-                    .Where(e => e.ReadyToShow && (e.DateOfEnd == null ||e.DateOfEnd<DateTime.UtcNow))
+                    .Where(e => e.ReadyToShow && (e.DateOfEnd == null ||e.DateOfEnd>DateTime.UtcNow))
                     .Distinct()
                     .ToList();
                 return Ok(events);
@@ -58,25 +58,15 @@ namespace DiplomService.Controllers.ApiContollers
         {
             
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
+            if (user is null)
                 return NotFound();
-            }
-            if (_context.Events == null)
-            {
+            if (_context.Events is null)
                 return NotFound();
-            }
             var @event = await _context.Events.FirstOrDefaultAsync(x=>x.Id == id);
-
-            if (@event == null)
-            {
+            if (@event is null)
                 return NotFound();
-            }
             if (@event.DivisionsExist)
-            {
                 @event.Divisions = @event.Divisions.Where(div => div.DivisionMembers.Any(dm => dm.UserId == user.Id)).ToList();
-            }
-           
             return @event;
         }
     }

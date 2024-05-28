@@ -125,7 +125,10 @@ namespace DiplomService.Controllers.ApiContollers
                         viewModelItem.DateTime = GetNearestDate(measure.MeasureDates);
                     }
                     viewModelItem.Icon = measure.Measure.Icon;
-                    viewModel.Add(viewModelItem);
+                    if (viewModelItem.DateTime>DateTime.UtcNow)
+                    {
+                        viewModel.Add(viewModelItem);
+                    }
                 }
 
                 viewModel = viewModel.OrderBy(x => x.DateTime).ToList();

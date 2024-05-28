@@ -520,6 +520,12 @@ namespace DiplomService.Controllers
             @event.Measures.Clear();
             await _context.SaveChangesAsync();
 
+            @event.Divisions.ForEach(d=>_context.ApplicationData.RemoveRange(_context.ApplicationData.Where(x=>x.DivisionId==d.Id)));
+            await _context.SaveChangesAsync();
+
+            @event.Divisions.Clear();
+            await _context.SaveChangesAsync();
+
             _context.Events.Remove(@event);
             await _context.SaveChangesAsync();
         }

@@ -61,6 +61,17 @@
         </div>
     </form>
 </div>
+@section Faq {
+    <div id="faq">
+    </div>
+    <div id="faq-body">
+        <p class="h5 fw-bold">Инструкция использования:</p>
+        <p class="fw-bold">"Пользователь существует"</p>
+        <p>Если пользователь существует, начните вводить его имя и выберите из списка.</p>
+        <p class="fw-bold">"Пользователь не существует"</p>
+        <p>Заполните все поля соответствующими заголовкам значениями.</p>
+    </div>
+}
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

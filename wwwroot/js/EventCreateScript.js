@@ -5,7 +5,7 @@
     let divisionsExists = $("#DivisionExist").val() === 'True';
     var eventForm = $("#eventForm");
     var measureForm = $(".measuresForm");
-
+    var datesblockCopy = $('#singleDatePick')[0].innerHTML;
 
 
     $.validator.unobtrusive.parse($(eventForm));
@@ -99,9 +99,11 @@
         if (value ==='true') {
             parentBlock.find('#singleDatePick').show();
             parentBlock.find('#multiplyDatePick').hide();
+            parentBlock.find('#singleDatePick').append(datesblockCopy);
         } else if (value ==='false') {
             parentBlock.find('#multiplyDatePick').show();
             parentBlock.find('#singleDatePick').hide();
+            parentBlock.find('#singleDatePick').empty();
         } 
     });
     $(document).on('change', '#measureDatesMode', function () {
@@ -330,7 +332,7 @@
             '<div class="form-group d-flex align-items-center">' +
             '<img src="/Images/camara.png" alt="Image" id="previewImage" class="item-block__image">' +
             '<div>' +
-            '<input id="previewImageButton" accept=".png, .jpg, .jpeg .gif" type="file" placeholder="" name="Divisions[' + index + '].PreviewImageFile">' +
+            '<input id="previewImageButton" accept=".png, .jpg, .jpeg, .gif" type="file" placeholder="" name="Divisions[' + index + '].PreviewImageFile">' +
             '</div>' +
             '</div>' +
             '</div>' +

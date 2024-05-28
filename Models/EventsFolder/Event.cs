@@ -54,7 +54,7 @@ namespace DiplomService.Models
         {
             get
             {
-                return Divisions.SelectMany(d => d.DivisionMembers).Distinct().Count();
+                return Divisions.SelectMany(d => d.DivisionMembers).Select(x=>x.User).Distinct().Count();
             }
         }
     }

@@ -90,30 +90,16 @@ namespace DiplomService.Controllers.ServiceControllers
         {
             time = time.ToLower();
             DateTimeOffset offset = DateTimeOffset.Now;
-            if (time.Contains("day"))
-            {
-                offset = offset.AddDays(1);
-            }
-            else if (time.Contains("week"))
-            {
-                offset = offset.AddDays(7);
-            }
-            else if (time.Contains("mounth"))
-            {
-                offset = offset.AddDays(31);
-            }
-            else if (time.Contains("always"))
-            {
-                offset = DateTimeOffset.MaxValue;
-            }
-
+            if (time.Contains("day")) offset = offset.AddDays(1);
+            else if (time.Contains("week")) offset = offset.AddDays(7);
+            else if (time.Contains("mounth")) offset = offset.AddDays(31);
+            else if (time.Contains("always")) offset = DateTimeOffset.MaxValue;
             var user = await _userManager.FindByIdAsync(id);
             if (user != null)
             {
                 await _userManager.SetLockoutEndDateAsync(user, offset);
                 return RedirectToAction(nameof(List));
             }
-
             return View();
         }
         [HttpPost]

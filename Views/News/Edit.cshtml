@@ -37,7 +37,7 @@
                                 <img src="/Images/camara.png" alt="Image" class="item-block__image">
                             }
                         }
-                        <input asp-for="ImageFile" style="display:none" accept=".png, .jpg, .jpeg .gif" class="btn previewImageInput" type="file" />
+                        <input asp-for="ImageFile" style="display:none" accept=".png, .jpg, .jpeg, .gif" class="btn previewImageInput" type="file" />
                         <p class="login-form__submit pointer-event text-center previewImageButton">Выберите файл</p>
                     </div>
                     <span asp-validation-for="ImageFile" class="text-danger"></span>
@@ -80,7 +80,7 @@
                                 }
                             }
 
-                            <input asp-for="Sections[i].ImageFile" style="display:none" accept=".png, .jpg, .jpeg .gif" class="btn previewImageInput" type="file" />
+                            <input asp-for="Sections[i].ImageFile" style="display:none" accept=".png, .jpg, .jpeg, .gif" class="btn previewImageInput" type="file" />
                             <p class="login-form__submit pointer-event text-center previewImageButton">Выберите файл</p>
 
                         </div>

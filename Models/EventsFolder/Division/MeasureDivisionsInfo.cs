@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace DiplomService.Models.EventsFolder.Division
 {
@@ -14,7 +15,8 @@ namespace DiplomService.Models.EventsFolder.Division
         public int? DivisionId { get; set; }
         [JsonIgnore]
         public virtual Models.Division? Division { get; set; } = null;
-
+        [NotMapped]
+        public byte[]? Image { get => Measure.Icon; }
         public int MeasureId { get; set; }
         [JsonIgnore]
         public virtual Measure Measure { get; set; } = new();

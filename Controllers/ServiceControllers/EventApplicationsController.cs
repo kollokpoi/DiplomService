@@ -124,9 +124,10 @@ namespace DiplomService.Controllers
                     else
                     {
                         applicationData.DivisionId = @event.Divisions[0].Id;
+                        applicationData.Division = @event.Divisions.First();
                     }
-
                     
+
 
                     if (!ModelState.IsValid)
                         return View(model);
@@ -180,13 +181,12 @@ namespace DiplomService.Controllers
                     else
                     {
                         applicationData.DivisionId = @event.Divisions[0].Id;
+                        applicationData.Division = @event.Divisions.First();
                     }
-
+                    applicationData.Application = application;
                     application.ApplicationData.Add(applicationData);
                 }
             }
-            
-
             
             await _context.AddAsync(application);
             await _context.SaveChangesAsync();

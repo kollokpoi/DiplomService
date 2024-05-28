@@ -261,7 +261,7 @@ namespace DiplomService.Controllers.ServiceControllers
             HandleEventDelete(@event, reason);
             await RemoveEvent(@event);
 
-            if (!_context.Events.Any(x => x.Id == id))
+            if (_context.Events.Any(x => x.Id == id))
             {
                 ViewBag.ErrorMessage = "Произошла ошибка";
             }

@@ -5,6 +5,8 @@ using DiplomService.ViewModels;
 using DiplomService.ViewModels.Measures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DiplomService.Controllers
 {
@@ -105,15 +107,24 @@ namespace DiplomService.Controllers
                             OneTime = measure.OneTime,
                             WeekDays = measure.WeekDays,
                         };
-                        foreach (var item in measure.MeasureDates)
+                        for (int i = 0; i < measure.MeasureDates.Count; i++)
                         {
+                            var item = measure.MeasureDates[i];
                             var date = new MeasureDates()
                             {
                                 Datetime = item.Datetime,
                                 Place = item.Place,
                             };
+                            if (item.Datetime < @event.DateOfStart)
+                                ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не раньше {@event.DateOfStart.ToShortDateString()}");
+                            if (@event.DateOfEnd is not null)
+                                if (item.Datetime > @event.DateOfEnd)
+                                    ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не позже {@event.DateOfEnd.Value.ToShortDateString()}");
+                            if (!ModelState.IsValid)
+                                return View(measure);
                             measureDivisionInfo.MeasureDates.Add(date);
                         }
+
                         newMeasure.MeasureDivisionsInfos.Add(measureDivisionInfo);
                     }
                     else
@@ -139,6 +150,13 @@ namespace DiplomService.Controllers
                             Datetime = measure.MeasureDates[0].Datetime,
                             Place = measure.Place
                         });
+                        if (measure.MeasureDates[0].Datetime < @event.DateOfStart)
+                            ModelState.AddModelError($"MeasureDates[0].Datetime", $"Дата начала не раньше {@event.DateOfStart.ToShortDateString()}");
+                        if (@event.DateOfEnd is not null)
+                            if (measure.MeasureDates[0].Datetime > @event.DateOfEnd)
+                                ModelState.AddModelError($"MeasureDates[0].Datetime", $"Дата начала не позже {@event.DateOfEnd.Value.ToShortDateString()}");
+                        if (!ModelState.IsValid)
+                            return View(measure);
                     }
                     else
                     {
@@ -161,15 +179,23 @@ namespace DiplomService.Controllers
                         }
                         else
                         {
-                            foreach (var item in measure.MeasureDates)
+                            for (int i = 0; i < measure.MeasureDates.Count; i++)
                             {
+                                var item = measure.MeasureDates[i];
                                 var date = new MeasureDates()
                                 {
                                     Datetime = item.Datetime,
                                     Place = item.Place,
                                 };
+                                if (item.Datetime < @event.DateOfStart)
+                                    ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не раньше {@event.DateOfStart.ToShortDateString()}");
+                                if (@event.DateOfEnd is not null)
+                                    if (item.Datetime > @event.DateOfEnd)
+                                        ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не позже {@event.DateOfEnd.Value.ToShortDateString()}");
                                 measureDivisionInfo.MeasureDates.Add(date);
                             }
+                            if (!ModelState.IsValid)
+                                return View(measure);
                         }
                     }
                     measureDivisionInfo.Division = @event.Divisions[0];
@@ -314,8 +340,9 @@ namespace DiplomService.Controllers
                             ids.Add(item.Id);
                         }
 
-                        foreach (var item in model.MeasureDates)
+                        for (int i = 0; i < model.MeasureDates.Count; i++)
                         {
+                            var item = model.MeasureDates[i];
                             if (item.Id != 0)
                             {
                                 ids.Remove(item.Id);
@@ -324,6 +351,12 @@ namespace DiplomService.Controllers
                                     continue;
                                 date.Datetime = item.Datetime;
                                 date.Place = item.Place;
+
+                                if (item.Datetime < measure.Event.DateOfStart)
+                                    ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не раньше {measure.Event.DateOfStart.ToShortDateString()}");
+                                if (measure.Event.DateOfEnd is not null)
+                                    if (item.Datetime > measure.Event.DateOfEnd)
+                                        ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не позже {measure.Event.DateOfEnd.Value.ToShortDateString()}");
                             }
                             else
                             {
@@ -333,10 +366,17 @@ namespace DiplomService.Controllers
                                     Place = item.Place,
                                     MeasureDivisionsInfos = measureDivision
                                 };
+
+                                if (item.Datetime < measure.Event.DateOfStart)
+                                    ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не раньше {measure.Event.DateOfStart.ToShortDateString()}");
+                                if (measure.Event.DateOfEnd is not null)
+                                    if (item.Datetime > measure.Event.DateOfEnd)
+                                        ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не позже {measure.Event.DateOfEnd.Value.ToShortDateString()}");
                                 measureDivision.MeasureDates.Add(date);
                             }
                         }
-
+                        if (!ModelState.IsValid)
+                            return View(model);
                         foreach (var item in ids)
                         {
                             var measureDate = measureDivision.MeasureDates.FirstOrDefault(x => x.Id == item);
@@ -375,6 +415,14 @@ namespace DiplomService.Controllers
                             date.Datetime = model.MeasureDates[0].Datetime;
                             date.Place = model.Place;
                         }
+
+                        if (date.Datetime < measure.Event.DateOfStart)
+                            ModelState.AddModelError($"MeasureDates[0].Datetime", $"Дата начала не раньше {measure.Event.DateOfStart.ToShortDateString()}");
+                        if (measure.Event.DateOfEnd is not null)
+                            if (date.Datetime > measure.Event.DateOfEnd)
+                                ModelState.AddModelError($"MeasureDates[0].Datetime", $"Дата начала не позже {measure.Event.DateOfEnd.Value.ToShortDateString()}");
+                        if (!ModelState.IsValid)
+                            return View(model);
 
                         var dates = measureDivision.MeasureDates.Where(x => x.Id != date.Id);
                         measureDivision.MeasureDays.Clear();
@@ -431,8 +479,9 @@ namespace DiplomService.Controllers
                             }
 
                             measureDivision.MeasureDays.Clear();
-                            foreach (var item in model.MeasureDates)
+                            for (int i = 0; i < model.MeasureDates.Count; i++)
                             {
+                                var item = model.MeasureDates[i];
                                 bool contains = item.Id != 0;
                                 if (contains)
                                 {
@@ -442,6 +491,11 @@ namespace DiplomService.Controllers
                                         continue;
                                     measureDay.Datetime = item.Datetime;
                                     measureDay.Place = item.Place;
+                                    if (measureDay.Datetime < measure.Event.DateOfStart)
+                                        ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не раньше {measure.Event.DateOfStart.ToShortDateString()}");
+                                    if (measure.Event.DateOfEnd is not null)
+                                        if (measureDay.Datetime > measure.Event.DateOfEnd)
+                                            ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не позже {measure.Event.DateOfEnd.Value.ToShortDateString()}");
                                 }
                                 else
                                 {
@@ -451,12 +505,18 @@ namespace DiplomService.Controllers
                                         Place = item.Place,
                                         MeasureDivisionsInfos = measureDivision
                                     };
-
+                                    if (date.Datetime < measure.Event.DateOfStart)
+                                        ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не раньше {measure.Event.DateOfStart.ToShortDateString()}");
+                                    if (measure.Event.DateOfEnd is not null)
+                                        if (date.Datetime > measure.Event.DateOfEnd)
+                                            ModelState.AddModelError($"MeasureDates[{i}].Datetime", $"Дата начала не позже {measure.Event.DateOfEnd.Value.ToShortDateString()}");
                                     measureDivision.MeasureDates.Add(date);
                                 }
 
                             }
 
+                            if (!ModelState.IsValid)
+                                return View(model);
                             foreach (var dateItem in measureDivision.MeasureDates)
                             {
                                 if (ids.Contains(dateItem.Id))
@@ -486,7 +546,7 @@ namespace DiplomService.Controllers
                     return View(model);
                 }
                 _context.SaveChanges();
-                return RedirectToAction(nameof(Index), new { Id = model.EventId });
+                return RedirectToAction(nameof(Index), new { Id = measure.EventId });
             }
             return View(model);
         }

@@ -4,14 +4,6 @@
     ViewData["Title"] = @Model.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-@{
-    string min = $"{Model.StartDate.Day}.{Model.StartDate.Month}.{Model.StartDate.Year}";
-    string max = "";
-    if (Model.EndDate != null)
-    {
-        max = $"{Model.EndDate.Value.Day}.{Model.EndDate.Value.Month}.{Model.EndDate.Value.Year}";
-    }
-}
 <div class="intro" style="height:40vh">
     <div class="intro__column">
         <p class="intro__title">Заполните о подразделении</p>
@@ -47,7 +39,7 @@
                         }
                     }
                     <div>
-                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg .gif" class="btn" type="file" placeholder="" />
+                        <input asp-for="PreviewImageFile" style="display:none" id="previewImageButton" accept=".png, .jpg, .jpeg, .gif" class="btn" type="file" placeholder="" />
                         <p onclick="document.getElementById('previewImageButton').click()" class="login-form__submit pointer-event text-center">Выберите файл</p>
                     </div>
                 </div>
@@ -171,9 +163,12 @@
                             singleVisible = "display:none";
                         }
                         <div style="@singleVisible" class="form-group my-2" id="singleDatePick">
-                            <label asp-for="Measures[i].MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
-                            <input asp-for="Measures[i].MeasureDates[0].Datetime" type="datetime-local" class="login-form__input form-control" />
-                            <span asp-validation-for="Measures[i].MeasureDates[0].Datetime" class="text-danger"></span>
+                            @if (@Model.Measures[i].OneTime)
+                            {
+                                <label asp-for="Measures[i].MeasureDates[0].Datetime" class="control-label">Укажите дату и время проведения*</label>
+                                <input asp-for="Measures[i].MeasureDates[0].Datetime" type="datetime-local" class="login-form__input form-control" />
+                                <span asp-validation-for="Measures[i].MeasureDates[0].Datetime" class="text-danger"></span>
+                            }
                         </div>
                         <div style="@multiVisible" id="multiplyDatePick">
                             <div class="form-group my-2">
@@ -274,7 +269,7 @@
                                                     <div class="form-group my-2 dateOfMeasureTimeBlock">
                                                         <input type="hidden" asp-for="Measures[i].MeasureDates[j].Id"/>
                                                         <label asp-for="Measures[i].MeasureDates[j].Datetime" class="control-label">Укажите дату и время</label>
-                                                        <input asp-for="Measures[i].MeasureDates[j].Datetime" min="@min" max="@max" type="datetime-local" class="login-form__input form-control" />
+                                                        <input asp-for="Measures[i].MeasureDates[j].Datetime" type="datetime-local" class="login-form__input form-control" />
                                                         <span asp-validation-for="Measures[i].MeasureDates[j].Datetime" class="text-danger"></span>
                                                     </div>
                                                     <div class="form-group ms-3 dateOfMeasurePlaceBlock">

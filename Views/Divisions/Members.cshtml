@@ -26,8 +26,8 @@
                 var user = item.User as MobileUser;
                 if (user is null)
                     continue;
-                <div class="item-block py-3 justify-content-between my-3">
-                    <div class="d-flex align-content-center">
+                <div class="item-block py-3 justify-content-between my-3 organization-user-item">
+                    <div class="d-flex align-content-center multi-column-block">
                         @if (user.Image != null)
                         {
                             string? mimeType = ImageWorker.GetImageMimeType(user.Image); // MIME-тип по умолчанию
@@ -47,7 +47,7 @@
                             <p class="item-block__text">Курс обучения: @user.Course</p>
                         </div>
                     </div>
-                    <form asp-action="DeleteUserFromDivision" method="post">
+                    <form asp-action="DeleteUserFromDivision" method="post" class="flex-row-block">
                         <input type="hidden" name="Id" value="@item.Id" />
                         <button type="submit" class="btn btn-primary d-block login-form__submit">Удалить из подразделения</button>
                     </form>
@@ -61,8 +61,8 @@
         <div class="items-section">
             @foreach (var item in Model.Where(x => x.DivisionDirector))
             {
-                <div class="item-block py-3 justify-content-between my-3">
-                    <div class="d-flex align-items-center">
+                <div class="item-block py-3 justify-content-between my-3 organization-user-item">
+                    <div class="d-flex align-content-center multi-column-block">
                         @if (item.User.Image != null)
                         {
                             string? mimeType = ImageWorker.GetImageMimeType(item.User.Image); // MIME-тип по умолчанию
@@ -88,8 +88,8 @@
                             }
                         </div>
                     </div>
-                    
-                    <form asp-action="DeleteUserFromDivision" method="post">
+
+                    <form asp-action="DeleteUserFromDivision" method="post" class="flex-row-block">
                         <input type="hidden" name="Id" value="@item.Id" />
                         <button type="submit" class="btn btn-primary d-block login-form__submit">Удалить из подразделения</button>
                     </form>
@@ -105,35 +105,6 @@
    
 </div>
 
-@section Faq {
-    <div id="faq">
-    </div>
-    <div id="faq-body">
-        <p class="h5 fw-bold">Описание полей:</p>
-        <p class="fw-bold">"Продолжительность"</p>
-        <p>Укажите, сколько должно длиться мероприятие</p>
-        <p class="fw-bold">"Основное место проведения"</p>
-        <p>Укажите, место, в котором должно проводиться мероприятие</p>
-        <p class="fw-bold">"Частота проведения"</p>
-        <ul>
-            <li>
-                Одноразовое - событие произойдет только один раз, дату и время проведения которого потребуется указать. Например, награждение
-            </li>
-            <li>
-                Повторяющееся - мероприятие будет проводиться несколько раз, для чего потребуется настроить дни повторения.
-                <p class="fw-bold">"Режим выбора дат"</p>
-                <ul>
-                    <li>
-                        Даты - потребуется указать конкретные, даты, в которое будет проводиться мероприятие.
-                    </li>
-                    <li>
-                        Дни недели - выберите дни недели, в которые будет проводиться мероприятие и укажите время.
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-}
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

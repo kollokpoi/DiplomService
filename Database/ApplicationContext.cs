@@ -88,7 +88,7 @@ namespace DiplomService.Database
                 .HasOne(ad => ad.Division)
                 .WithMany()
                 .HasForeignKey(ad => ad.DivisionId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
     }
