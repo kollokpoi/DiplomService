@@ -324,7 +324,7 @@ namespace DiplomService.Controllers.ApiContollers
                 code += random.Next(10);
             Console.WriteLine(code);
             codes.Add(user.Id, code);
-            //SmsService.SendSms(user.PhoneNumber,$"PrograMath. Ваш код авторизации - {code}");
+            SmsService.SendSms(user.PhoneNumber,$"PrograMath. Ваш код авторизации - {code}");
 
             await Task.Delay(timeToNextRequest);
             codes.Remove(user.Id);

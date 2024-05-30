@@ -47,8 +47,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-//app.UseHangfireDashboard("/dashboard");
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
